@@ -2666,11 +2666,34 @@ contains
 
                      sdlng2sap_par = currentPatch%sdlng2sap_par%GetMean()*     &
                         sec_per_day*megajoules_per_joule
+                     
+                         ! === DEBUG BLOCK START ===
+                           if (hlm_model_day >= 65) then  ! Only print near day 68
+                              write(fates_log(),*) '=== DEBUG RECRUITMENT TRS Day:', hlm_model_day
+                              write(fates_log(),*) 'PFT:', ft
+                              write(fates_log(),*) 'Element:', element_id
+                              write(fates_log(),*) 'sdlng2sap_par (raw GetMean):', currentPatch%sdlng2sap_par%GetMean()
+                              write(fates_log(),*) 'sdlng2sap_par (converted):', sdlng2sap_par
+                              write(fates_log(),*) 'seed_germ before calc:', currentPatch%litter(el)%seed_germ(ft)
+                              write(fates_log(),*) 'seedling_light_rec_a:', EDPftvarcon_inst%seedling_light_rec_a(ft)
+                              write(fates_log(),*) 'seedling_light_rec_b:', EDPftvarcon_inst%seedling_light_rec_b(ft)
+                              write(fates_log(),*) 'currentPatch%area:', currentPatch%area
+                           end if
+                           ! === DEBUG BLOCK END ===
 
                      mass_avail = currentPatch%area*                           &
                         currentPatch%litter(el)%seed_germ(ft)*                 & 
                         EDPftvarcon_inst%seedling_light_rec_a(ft)*             &
                         sdlng2sap_par**EDPftvarcon_inst%seedling_light_rec_b(ft) 
+
+                     ! === DEBUG BLOCK START ===
+                     if (hlm_model_day >= 65) then
+                        write(fates_log(),*) 'mass_avail after calc:', mass_avail
+                        if (mass_avail /= mass_avail) then
+                           write(fates_log(),*) '!!! NaN DETECTED in mass_avail !!!'
+                        end if
+                     end if
+                     ! === DEBUG BLOCK END ===
 
                      ! If soil moisture is below pft-specific seedling  moisture stress threshold the 
                      ! recruitment does not occur.
@@ -2689,6 +2712,20 @@ contains
                   cohort_n = min(cohort_n, mass_avail/mass_demand)
 
                end do do_elem
+
+               ! === DEBUG BLOCK START ===
+               if (hlm_model_day >= 65 .and. ft == 1) then  ! Only PFT 1 to reduce spam
+                  write(fates_log(),*) '=== DEBUG COHORT_N CALCULATION ==='
+                  write(fates_log(),*) 'Model day:', hlm_model_day
+                  write(fates_log(),*) 'PFT:', ft
+                  write(fates_log(),*) 'final cohort_n:', cohort_n
+                  write(fates_log(),*) 'final mass_demand:', mass_demand
+                  write(fates_log(),*) 'final mass_avail:', mass_avail
+                  if (cohort_n /= cohort_n) then
+                     write(fates_log(),*) '!!! NaN DETECTED in cohort_n !!!'
+                  end if
+               end if
+               ! === DEBUG BLOCK END ===
 
             else
                ! prescribed recruitment rates. number per sq. meter per year

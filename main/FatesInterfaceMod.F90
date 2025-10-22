@@ -2313,6 +2313,23 @@ contains
               
               new_seedling_layer_par = seedling_par_high*par_high_frac + seedling_par_low*par_low_frac
               
+              ! === DEBUG BLOCK START ===
+              if (hlm_model_day <= 70) then
+               write(fates_log(),*) '=== DEBUG PAR CALCULATION Day:', hlm_model_day
+               write(fates_log(),*) 'Site:', s, 'Patch:', ifp
+               write(fates_log(),*) 'Input atm_par_dir:', bc_in(s)%solad_parb(ifp,ipar)
+               write(fates_log(),*) 'Input atm_par_dif:', bc_in(s)%solai_parb(ifp,ipar)
+               write(fates_log(),*) 'seedling_par_high:', seedling_par_high
+               write(fates_log(),*) 'par_high_frac:', par_high_frac
+               write(fates_log(),*) 'seedling_par_low:', seedling_par_low
+               write(fates_log(),*) 'par_low_frac:', par_low_frac
+               write(fates_log(),*) 'new_seedling_layer_par:', new_seedling_layer_par
+               if (new_seedling_layer_par /= new_seedling_layer_par) then
+                  write(fates_log(),*) '!!! NaN DETECTED in new_seedling_layer_par !!!'
+               end if
+            end if
+            ! === DEBUG BLOCK END ===
+            
               call cpatch%seedling_layer_par24%UpdateRMean(new_seedling_layer_par)
               call cpatch%sdlng_mort_par%UpdateRMean(new_seedling_layer_par)
               call cpatch%sdlng2sap_par%UpdateRMean(new_seedling_layer_par)
