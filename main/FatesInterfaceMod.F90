@@ -2329,7 +2329,7 @@ contains
                end if
             end if
             ! === DEBUG BLOCK END ===
-            
+
               call cpatch%seedling_layer_par24%UpdateRMean(new_seedling_layer_par)
               call cpatch%sdlng_mort_par%UpdateRMean(new_seedling_layer_par)
               call cpatch%sdlng2sap_par%UpdateRMean(new_seedling_layer_par)
@@ -2424,10 +2424,13 @@ subroutine SeedlingParPatch(cpatch, &
   integer  :: ipft       ! current PFT index
   integer  :: iv         ! lower-most leaf layer index for the cl & pft combo
 
+  ! NEW CODE (RW FIXED)
   ! Start with the assumption that there is a single canopy layer
-  seedling_par_high = atm_par
-  par_high_frac     = 1._r8-cpatch%total_canopy_area
-  par_low_frac      = cpatch%total_canopy_area
+  seedling_par_high = atm_par_dir+atm_par_dif
+  ! par_high_frac     = 1._r8-cpatch%total_canopy_area
+  par_high_frac     = 1._r8 - min(1._r8, cpatch%total_canopy_area / cpatch%area)
+  ! par_low_frac      = cpatch%total_canopy_area
+  par_low_frac      = min(1._r8, cpatch%total_canopy_area / cpatch%area)
 
   ! Work up through the canopy layers from the bottom layer
   do cl = cpatch%NCL_p,max(1,cpatch%NCL_p-1),-1
