@@ -2350,12 +2350,43 @@ contains
                   EDPftvarcon_inst%seedling_h2o_mort_c(pft)
           end if ! mdd threshold check
           
+            ! SEED DECAY DEBUG:
+            if (pft == 1 .and. hlm_model_day > 136.0_r8) then
+               write(fates_log(),*) '=== SEED_DECAY DEBUG ==='
+               write(fates_log(),*) 'PFT:', pft
+               write(fates_log(),*) 'Day:', hlm_model_day
+               write(fates_log(),*) 'litt%seed_germ(pft) AT CALC TIME:', litt%seed_germ(pft)
+               write(fates_log(),*) 'seedling_light_mort_rate:', seedling_light_mort_rate
+               write(fates_log(),*) 'seedling_h2o_mort_rate:', seedling_h2o_mort_rate
+               write(fates_log(),*) 'background mort:', EDPftvarcon_inst%background_seedling_mort(pft) * years_per_day
+            end if
+
           ! Step 3. Sum modes of mortality (including background mortality) and send dead seedlings
           ! to litter        
-          litt%seed_germ_decay(pft) = (litt%seed_germ(pft) * seedling_light_mort_rate) + &
+          ! RW editing:       
+            litt%seed_germ_decay(pft) = (litt%seed_germ(pft) * seedling_light_mort_rate) + &
                (litt%seed_germ(pft) * seedling_h2o_mort_rate) + &
                (litt%seed_germ(pft) * EDPftvarcon_inst%background_seedling_mort(pft) &
                * years_per_day)
+
+            ! Cap decay to available seedlings to prevent negative pools and mass balance errors
+            litt%seed_germ_decay(pft) = min(litt%seed_germ_decay(pft), litt%seed_germ(pft))
+
+            ! Optional warning
+            if (litt%seed_germ_decay(pft) < (litt%seed_germ(pft) * &
+               (seedling_light_mort_rate + seedling_h2o_mort_rate + &
+                  EDPftvarcon_inst%background_seedling_mort(pft) * years_per_day))) then
+               write(fates_log(),*) 'WARNING: Capping seedling mortality in SeedDecay for PFT', pft
+               write(fates_log(),*) 'Model day:', hlm_model_day
+               write(fates_log(),*) 'Total mortality rate would have been:', &
+                  (seedling_light_mort_rate + seedling_h2o_mort_rate + &
+                     EDPftvarcon_inst%background_seedling_mort(pft) * years_per_day)
+            end if
+
+            if (pft == 1 .and. hlm_model_day > 136.0_r8) then
+               write(fates_log(),*) 'Calculated seed_germ_decay:', litt%seed_germ_decay(pft)
+               write(fates_log(),*) '========================'
+            end if
        
        else
           
