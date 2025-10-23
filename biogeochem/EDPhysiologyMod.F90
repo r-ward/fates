@@ -542,6 +542,9 @@ contains
     integer :: ilyr        ! soil layer loop counter
     integer :: dcmpy       ! decomposability index
 
+   
+    real(r8) :: decay_before_cap  ! RW - Adding for debugging
+      
     do el = 1, num_elements
 
        litt => currentPatch%litter(el)
@@ -558,6 +561,24 @@ contains
 
           ! Note that the recruitment scheme will use seed_germ
           ! for its construction costs.
+
+          ! RW DEBUGGING 
+          decay_before_cap = litt%seed_germ_decay(pft)
+          litt%seed_germ_decay(pft) = min(litt%seed_germ_decay(pft), &
+                                    litt%seed_germ(pft) + litt%seed_germ_in(pft))
+
+            ! Warn if we had to cap (indicates unrealistic mortality rates)
+            if (decay_before_cap > litt%seed_germ_decay(pft) + 1.e-10_r8) then
+               write(fates_log(),*) 'WARNING: Seedling mortality exceeded available pool for PFT', pft
+               write(fates_log(),*) 'Calculated decay:', decay_before_cap
+               write(fates_log(),*) 'Available seedlings:', litt%seed_germ(pft) + litt%seed_germ_in(pft)
+               write(fates_log(),*) 'Consider reviewing mortality rate parameters'
+            end if
+
+          ! RW - Cap the decay flux to prevent negative seed_germ pool 
+           litt%seed_germ_decay(pft) = min(litt%seed_germ_decay(pft), &
+               litt%seed_germ(pft) + litt%seed_germ_in(pft))
+   
           litt%seed_germ(pft) = litt%seed_germ(pft) + &
                litt%seed_germ_in(pft) - &
                litt%seed_germ_decay(pft)
