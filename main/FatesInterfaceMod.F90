@@ -2344,7 +2344,7 @@ contains
                  ! Calculate the new moisture deficit day (mdd) value for each pft
                  ! RW - remove multiplication by sdlng_mdd_timescale ?
                  new_seedling_mdd = (abs(EDPftvarcon_inst%seedling_psi_crit(pft)) - abs(new_seedling_layer_smp)) &
-                      * (-1.0_r8) 
+                      * (-1.0_r8) * sdlng_mdd_timescale
 
                  ! If mdds are negative then it means that soil is wetter than smp_crit and the moisture
                  ! deficit is 0  
