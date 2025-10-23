@@ -2349,7 +2349,18 @@ contains
                   EDPftvarcon_inst%seedling_h2o_mort_b(pft) * seedling_mdds + &
                   EDPftvarcon_inst%seedling_h2o_mort_c(pft)
           end if ! mdd threshold check
-          
+            
+            ! H20 MORT DEBUG: 
+            if (pft == 1 .and. hlm_model_day > 136.0_r8) then
+               write(fates_log(),*) '=== H2O MORT DEBUG ==='
+               write(fates_log(),*) 'seedling_mdds:', seedling_mdds
+               write(fates_log(),*) 'seedling_mdd_crit:', EDPftvarcon_inst%seedling_mdd_crit(pft)
+               write(fates_log(),*) 'h2o_mort_a:', EDPftvarcon_inst%seedling_h2o_mort_a(pft)
+               write(fates_log(),*) 'h2o_mort_b:', EDPftvarcon_inst%seedling_h2o_mort_b(pft)
+               write(fates_log(),*) 'h2o_mort_c:', EDPftvarcon_inst%seedling_h2o_mort_c(pft)
+               write(fates_log(),*) 'Calculated h2o_mort_rate (BEFORE any cap):', seedling_h2o_mort_rate
+            end if
+
             ! SEED DECAY DEBUG:
             if (pft == 1 .and. hlm_model_day > 136.0_r8) then
                write(fates_log(),*) '=== SEED_DECAY DEBUG ==='
