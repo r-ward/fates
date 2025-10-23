@@ -2342,16 +2342,34 @@ contains
                  new_seedling_layer_smp = bc_in(s)%smp_sl(ilayer_seedling_root)
 
                  ! Calculate the new moisture deficit day (mdd) value for each pft
-                 ! RW debugging - remove *sdlng_mdd_timescale, this is accounted for 
-                 ! when calculating the ema in L64
+                 ! RW - remove multiplication by sdlng_mdd_timescale ?
                  new_seedling_mdd = (abs(EDPftvarcon_inst%seedling_psi_crit(pft)) - abs(new_seedling_layer_smp)) &
-                      * (-1.0_r8)
+                      * (-1.0_r8) 
 
                  ! If mdds are negative then it means that soil is wetter than smp_crit and the moisture
                  ! deficit is 0  
                  if (new_seedling_mdd < 0.0_r8) then
                     new_seedling_mdd = 0.0_r8
                  endif
+
+                 ! === DEBUG MDD CALCULATION ===
+                 if (pft == 1 .and. s == 1 .and. hlm_model_day >= 240.0_r8 .and. hlm_model_day <= 245.0_r8) then
+                   write(fates_log(),*) '=== MDD DEBUG Day:', hlm_model_day
+                   write(fates_log(),*) 'PFT:', pft, 'Soil layer:', ilayer_seedling_root
+                   write(fates_log(),*) 'Raw SMP from host:', bc_in(s)%smp_sl(ilayer_seedling_root)
+                   write(fates_log(),*) 'new_seedling_layer_smp:', new_seedling_layer_smp
+                   write(fates_log(),*) 'seedling_psi_crit:', EDPftvarcon_inst%seedling_psi_crit(pft)
+                   write(fates_log(),*) 'abs(smp):', abs(new_seedling_layer_smp)
+                   write(fates_log(),*) 'abs(psi_crit):', abs(EDPftvarcon_inst%seedling_psi_crit(pft))
+                   write(fates_log(),*) 'Daily deficit (mm H2O):', abs(new_seedling_layer_smp) - abs(EDPftvarcon_inst%seedling_psi_crit(pft))
+                   write(fates_log(),*) 'new_seedling_mdd (after zero check):', new_seedling_mdd
+                   write(fates_log(),*) 'Current EMA c_mean:', cpatch%sdlng_mdd(pft)%p%c_mean
+                   write(fates_log(),*) 'Current c_index:', cpatch%sdlng_mdd(pft)%p%c_index
+                   write(fates_log(),*) 'n_mem:', cpatch%sdlng_mdd(pft)%p%def_type%n_mem
+                   write(fates_log(),*) 'sdlng_mdd_timescale:', sdlng_mdd_timescale
+                   write(fates_log(),*) '========================'
+                 end if
+                 ! === END DEBUG ===
 
                  ! Update the seedling layer smp and mdd running means
                  call cpatch%sdlng_emerg_smp(pft)%p%UpdateRMean(new_seedling_layer_smp)
