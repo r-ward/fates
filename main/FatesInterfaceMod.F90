@@ -2314,7 +2314,7 @@ contains
               new_seedling_layer_par = seedling_par_high*par_high_frac + seedling_par_low*par_low_frac
               
               ! === DEBUG BLOCK START ===
-              if (hlm_model_day <= 70) then
+              if (hlm_model_day >= 1060) then
                write(fates_log(),*) '=== DEBUG PAR CALCULATION Day:', hlm_model_day
                write(fates_log(),*) 'Site:', s, 'Patch:', ifp
                write(fates_log(),*) 'Input atm_par_dir:', bc_in(s)%solad_parb(ifp,ipar)
@@ -2352,8 +2352,8 @@ contains
                     new_seedling_mdd = 0.0_r8
                  endif
 
-                 ! === DEBUG MDD CALCULATION ===
-                 if (pft == 1 .and. s == 1 .and. hlm_model_day >= 240.0_r8 .and. hlm_model_day <= 245.0_r8) then
+                ! === DEBUG MDD CALCULATION ===
+                 if (pft == 1 .and. s == 1 .and. hlm_model_day >= 1060.0_r8) then
                    write(fates_log(),*) '=== MDD DEBUG Day:', hlm_model_day
                    write(fates_log(),*) 'PFT:', pft, 'Soil layer:', ilayer_seedling_root
                    write(fates_log(),*) 'Raw SMP from host:', bc_in(s)%smp_sl(ilayer_seedling_root)
@@ -2369,7 +2369,7 @@ contains
                    write(fates_log(),*) 'sdlng_mdd_timescale:', sdlng_mdd_timescale
                    write(fates_log(),*) '========================'
                  end if
-                 ! === END DEBUG ===
+                ! === END DEBUG ===
 
                  ! Update the seedling layer smp and mdd running means
                  call cpatch%sdlng_emerg_smp(pft)%p%UpdateRMean(new_seedling_layer_smp)

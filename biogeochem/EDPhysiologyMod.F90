@@ -2338,7 +2338,8 @@ contains
           
           ! Get the current seedling moisture deficit days (tracked as a pft-specific exponential
           ! average)
-          seedling_mdds = currentPatch%sdlng_mdd(pft)%p%GetMean()     
+          ! RW - DEBUG TEST
+          seedling_mdds = currentPatch%sdlng_mdd(pft)%p%GetMean() * sdlng_mdd_timescale    
           
           ! Calculate seedling mortality as a function of moisture deficit days (mdd)
           ! If the seedling mmd value is below a critical threshold then moisture-based mortality is zero
@@ -2351,7 +2352,7 @@ contains
           end if ! mdd threshold check
             
             ! H20 MORT DEBUG: 
-            if (pft == 1 .and. hlm_model_day > 136.0_r8) then
+            if (pft == 1 .and. hlm_model_day > 1060.0_r8) then
                write(fates_log(),*) '=== H2O MORT DEBUG ==='
                write(fates_log(),*) 'seedling_mdds:', seedling_mdds
                write(fates_log(),*) 'seedling_mdd_crit:', EDPftvarcon_inst%seedling_mdd_crit(pft)
