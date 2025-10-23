@@ -2342,8 +2342,10 @@ contains
                  new_seedling_layer_smp = bc_in(s)%smp_sl(ilayer_seedling_root)
 
                  ! Calculate the new moisture deficit day (mdd) value for each pft
+                 ! RW debugging - remove *sdlng_mdd_timescale, this is accounted for 
+                 ! when calculating the ema in L64
                  new_seedling_mdd = (abs(EDPftvarcon_inst%seedling_psi_crit(pft)) - abs(new_seedling_layer_smp)) &
-                      * (-1.0_r8) * sdlng_mdd_timescale
+                      * (-1.0_r8)
 
                  ! If mdds are negative then it means that soil is wetter than smp_crit and the moisture
                  ! deficit is 0  
