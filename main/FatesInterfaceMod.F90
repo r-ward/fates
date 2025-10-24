@@ -2313,7 +2313,7 @@ contains
               
               new_seedling_layer_par = seedling_par_high*par_high_frac + seedling_par_low*par_low_frac
               
-              ! === DEBUG BLOCK START ===
+              ! === DEBUG PAR CALCULATION ===
               if (hlm_model_day >= 1060) then
                write(fates_log(),*) '=== DEBUG PAR CALCULATION Day:', hlm_model_day
                write(fates_log(),*) 'Site:', s, 'Patch:', ifp
@@ -2328,7 +2328,7 @@ contains
                   write(fates_log(),*) '!!! NaN DETECTED in new_seedling_layer_par !!!'
                end if
             end if
-            ! === DEBUG BLOCK END ===
+            ! === DEBUG PAR CALCULATION  END ===
 
               call cpatch%seedling_layer_par24%UpdateRMean(new_seedling_layer_par)
               call cpatch%sdlng_mort_par%UpdateRMean(new_seedling_layer_par)
@@ -2342,7 +2342,7 @@ contains
                  new_seedling_layer_smp = bc_in(s)%smp_sl(ilayer_seedling_root)
 
                  ! Calculate the new moisture deficit day (mdd) value for each pft
-                 ! RW - remove multiplication by sdlng_mdd_timescale ?
+                 ! RW - remove multiplication by sdlng_mdd_timescale ? No, appx accumulation over 126 days
                  new_seedling_mdd = (abs(EDPftvarcon_inst%seedling_psi_crit(pft)) - abs(new_seedling_layer_smp)) &
                       * (-1.0_r8) * sdlng_mdd_timescale
 
@@ -2353,15 +2353,13 @@ contains
                  endif
 
                 ! === DEBUG MDD CALCULATION ===
-                 if (pft == 1 .and. s == 1 .and. hlm_model_day >= 1060.0_r8) then
+                 if (pft == 1 .and. s == 1) then
                    write(fates_log(),*) '=== MDD DEBUG Day:', hlm_model_day
                    write(fates_log(),*) 'PFT:', pft, 'Soil layer:', ilayer_seedling_root
                    write(fates_log(),*) 'Raw SMP from host:', bc_in(s)%smp_sl(ilayer_seedling_root)
                    write(fates_log(),*) 'new_seedling_layer_smp:', new_seedling_layer_smp
                    write(fates_log(),*) 'seedling_psi_crit:', EDPftvarcon_inst%seedling_psi_crit(pft)
-                   write(fates_log(),*) 'abs(smp):', abs(new_seedling_layer_smp)
-                   write(fates_log(),*) 'abs(psi_crit):', abs(EDPftvarcon_inst%seedling_psi_crit(pft))
-                   write(fates_log(),*) 'Daily deficit (mm H2O):', abs(new_seedling_layer_smp) - abs(EDPftvarcon_inst%seedling_psi_crit(pft))
+                   write(fates_log(),*) 'Deficit check val for check', abs(new_seedling_layer_smp) - abs(EDPftvarcon_inst%seedling_psi_crit(pft))
                    write(fates_log(),*) 'new_seedling_mdd (after zero check):', new_seedling_mdd
                    write(fates_log(),*) 'Current EMA c_mean:', cpatch%sdlng_mdd(pft)%p%c_mean
                    write(fates_log(),*) 'Current c_index:', cpatch%sdlng_mdd(pft)%p%c_index

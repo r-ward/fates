@@ -572,7 +572,7 @@ contains
                write(fates_log(),*) 'WARNING: Seedling mortality exceeded available pool for PFT', pft
                write(fates_log(),*) 'Calculated decay:', decay_before_cap
                write(fates_log(),*) 'Available seedlings:', litt%seed_germ(pft) + litt%seed_germ_in(pft)
-               write(fates_log(),*) 'Consider reviewing mortality rate parameters'
+               write(fates_log(),*) 'Review mortality rate calculation'
             end if
 
           ! RW - Cap the decay flux to prevent negative seed_germ pool 
@@ -2338,7 +2338,6 @@ contains
           
           ! Get the current seedling moisture deficit days (tracked as a pft-specific exponential
           ! average)
-          ! RW - DEBUG TEST
           seedling_mdds = currentPatch%sdlng_mdd(pft)%p%GetMean() 
           
           ! Calculate seedling mortality as a function of moisture deficit days (mdd)
@@ -2352,7 +2351,7 @@ contains
           end if ! mdd threshold check
             
             ! H20 MORT DEBUG: 
-            if (pft == 1 .and. hlm_model_day > 1060.0_r8) then
+            if (pft == 1) then
                write(fates_log(),*) '=== H2O MORT DEBUG ==='
                write(fates_log(),*) 'seedling_mdds:', seedling_mdds
                write(fates_log(),*) 'seedling_mdd_crit:', EDPftvarcon_inst%seedling_mdd_crit(pft)
@@ -2363,7 +2362,7 @@ contains
             end if
 
             ! SEED DECAY DEBUG:
-            if (pft == 1 .and. hlm_model_day > 136.0_r8) then
+            if (pft == 1) then
                write(fates_log(),*) '=== SEED_DECAY DEBUG ==='
                write(fates_log(),*) 'PFT:', pft
                write(fates_log(),*) 'Day:', hlm_model_day
@@ -2778,7 +2777,7 @@ contains
                end do do_elem
 
                ! === DEBUG BLOCK START ===
-               if (hlm_model_day >= 65 .and. ft == 1) then  ! Only PFT 1 to reduce spam
+               if (ft == 1) then  ! 1 PFT for now
                   write(fates_log(),*) '=== DEBUG COHORT_N CALCULATION ==='
                   write(fates_log(),*) 'Model day:', hlm_model_day
                   write(fates_log(),*) 'PFT:', ft
