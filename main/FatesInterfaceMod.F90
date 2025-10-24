@@ -2359,7 +2359,7 @@ contains
                    write(fates_log(),*) 'Raw SMP from host:', bc_in(s)%smp_sl(ilayer_seedling_root)
                    write(fates_log(),*) 'new_seedling_layer_smp:', new_seedling_layer_smp
                    write(fates_log(),*) 'seedling_psi_crit:', EDPftvarcon_inst%seedling_psi_crit(pft)
-                   write(fates_log(),*) 'Deficit check val for check', abs(new_seedling_layer_smp) - abs(EDPftvarcon_inst%seedling_psi_crit(pft))
+                   write(fates_log(),*) 'Deficit check val for check', abs(EDPftvarcon_inst%seedling_psi_crit(pft)) - abs(new_seedling_layer_smp)
                    write(fates_log(),*) 'new_seedling_mdd (after zero check):', new_seedling_mdd
                    write(fates_log(),*) 'Current EMA c_mean:', cpatch%sdlng_mdd(pft)%p%c_mean
                    write(fates_log(),*) 'Current c_index:', cpatch%sdlng_mdd(pft)%p%c_index
@@ -2370,9 +2370,15 @@ contains
                 ! === END DEBUG ===
 
                  ! Update the seedling layer smp and mdd running means
-                 call cpatch%sdlng_emerg_smp(pft)%p%UpdateRMean(new_seedling_layer_smp)
                  call cpatch%sdlng_mdd(pft)%p%UpdateRMean(new_seedling_mdd)
 
+                 ! RW - only update mdd after first model day 
+                 ! to avoid recording the unrealistic spike in SMP after initialization (~-billions)
+                 ! which takes forever to decay away 
+                 if (hlm_model_day > 1.0_r8) then
+                  call cpatch%sdlng_emerg_smp(pft)%p%UpdateRMean(new_seedling_layer_smp)
+                 endif
+                 
               enddo !end pft loop
               
            end if
