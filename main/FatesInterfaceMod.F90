@@ -2370,13 +2370,13 @@ contains
                 ! === END DEBUG ===
 
                  ! Update the seedling layer smp and mdd running means
-                 call cpatch%sdlng_mdd(pft)%p%UpdateRMean(new_seedling_mdd)
-
+               
                  ! RW - only update mdd after first model day 
                  ! to avoid recording the unrealistic spike in SMP after initialization (~-billions)
                  ! which takes forever to decay away 
-                 if (hlm_model_day > 1.0_r8) then
+                 if (hlm_model_day > 2.0_r8) then
                   call cpatch%sdlng_emerg_smp(pft)%p%UpdateRMean(new_seedling_layer_smp)
+                  call cpatch%sdlng_mdd(pft)%p%UpdateRMean(new_seedling_mdd)
                  endif
                  
               enddo !end pft loop
