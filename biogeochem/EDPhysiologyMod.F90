@@ -576,8 +576,9 @@ contains
             end if
 
           ! RW - Cap the decay flux to prevent negative seed_germ pool 
-           litt%seed_germ_decay(pft) = min(litt%seed_germ_decay(pft), &
-               litt%seed_germ(pft) + litt%seed_germ_in(pft))
+          ! Test - remove cap
+          !  litt%seed_germ_decay(pft) = min(litt%seed_germ_decay(pft), &
+          !     litt%seed_germ(pft) + litt%seed_germ_in(pft))
    
           litt%seed_germ(pft) = litt%seed_germ(pft) + &
                litt%seed_germ_in(pft) - &
@@ -2381,7 +2382,8 @@ contains
                * years_per_day)
 
             ! Cap decay to available seedlings to prevent negative pools and mass balance errors
-            litt%seed_germ_decay(pft) = min(litt%seed_germ_decay(pft), litt%seed_germ(pft))
+            ! TEST - remove cap 
+            ! litt%seed_germ_decay(pft) = min(litt%seed_germ_decay(pft), litt%seed_germ(pft))
 
             ! Optional warning
             if (litt%seed_germ_decay(pft) < (litt%seed_germ(pft) * &
