@@ -542,6 +542,7 @@ contains
     integer :: nlevsoil    ! number of soil layers
     integer :: ilyr        ! soil layer loop counter
     integer :: dcmpy       ! decomposability index
+    real(r8) :: net_seed_available ! Available seed carbon after inputs and decay
 
     do el = 1, num_elements
 
@@ -549,19 +550,22 @@ contains
 
        ! Update the bank of viable seeds
        ! -----------------------------------------------------------------------------------
-
        do pft = 1,numpft
-          litt%seed(pft) = litt%seed(pft) + &
-               litt%seed_in_local(pft) +   &
-               litt%seed_in_extern(pft) -  &
-               litt%seed_decay(pft) -      &
-               litt%seed_germ_in(pft)
+         ! Calculate net available seed after inputs and decay
+         net_seed_available = litt%seed(pft) + litt%seed_in_local(pft) + &
+            litt%seed_in_extern(pft) - litt%seed_decay(pft)
+
+         ! Cap germination flux at available seed to prevent negative seed pool
+         litt%seed_germ_in(pft) = min(litt%seed_germ_in(pft), net_seed_available)
+
+         ! Update pools
+         litt%seed(pft) = net_seed_available - litt%seed_germ_in(pft)
 
           ! Note that the recruitment scheme will use seed_germ
           ! for its construction costs.
-          litt%seed_germ(pft) = litt%seed_germ(pft) + &
-               litt%seed_germ_in(pft) - &
-               litt%seed_germ_decay(pft)
+         litt%seed_germ(pft) = litt%seed_germ(pft) + &
+            litt%seed_germ_in(pft) - &
+            litt%seed_germ_decay(pft)
 
        enddo
 
@@ -2326,14 +2330,20 @@ contains
              seedling_h2o_mort_rate = EDPftvarcon_inst%seedling_h2o_mort_a(pft) * seedling_mdds**2 + &
                   EDPftvarcon_inst%seedling_h2o_mort_b(pft) * seedling_mdds + &
                   EDPftvarcon_inst%seedling_h2o_mort_c(pft)
+
+             ! Cap h2o mortality rate at 1 - quadratic can produce values > 1
+             ! for large moisture deficit days
+             seedling_h2o_mort_rate = min(1.0_r8, seedling_h2o_mort_rate)
           end if ! mdd threshold check
 
           ! Step 3. Sum modes of mortality (including background mortality) and send dead seedlings
           ! to litter
-          litt%seed_germ_decay(pft) = (litt%seed_germ(pft) * seedling_light_mort_rate) + &
-               (litt%seed_germ(pft) * seedling_h2o_mort_rate) + &
-               (litt%seed_germ(pft) * EDPftvarcon_inst%background_seedling_mort(pft) &
-               * years_per_day)
+          ! Cap total rate at 1 to prevent a negative seedling pool.
+          litt%seed_germ_decay(pft) = litt%seed_germ(pft) * &
+            min(1.0_r8, seedling_light_mort_rate + &
+               seedling_h2o_mort_rate + &
+               (EDPftvarcon_inst%background_seedling_mort(pft) * &
+               years_per_day))
 
        else
 
@@ -2437,8 +2447,10 @@ contains
 
           ! If SMP is below a pft-specific value, then no germination occurs
           if ( seedling_layer_smp .GE. EDPftvarcon_inst%seedling_psi_emerg(pft) ) then
-             seedling_emerg_rate = photoblastic_germ_modifier * EDPftvarcon_inst%a_emerg(pft) * &
-                  wetness_index**EDPftvarcon_inst%b_emerg(pft)
+             ! Cap emergence rate at 1 - can exceed 1 for certain parameter combinations, 
+             ! leading to a negative seed bank
+             seedling_emerg_rate = min(1.0_r8, photoblastic_germ_modifier * EDPftvarcon_inst%a_emerg(pft) * &
+                  wetness_index**EDPftvarcon_inst%b_emerg(pft))
           else
 
              seedling_emerg_rate = 0.0_r8
