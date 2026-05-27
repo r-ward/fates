@@ -98,6 +98,7 @@ module FatesHistoryInterfaceMod
   use FatesConstantsMod        , only : ha_per_m2
   use FatesConstantsMod        , only : days_per_sec
   use FatesConstantsMod        , only : sec_per_day
+  use FatesConstantsMod        , only : megajoules_per_joule
   use FatesConstantsMod        , only : days_per_sec
   use FatesConstantsMod        , only : days_per_year
   use FatesConstantsMod        , only : years_per_day
@@ -666,6 +667,7 @@ module FatesHistoryInterfaceMod
   integer :: ih_fracarea_si_age
   integer :: ih_lai_si_age
   integer :: ih_canopy_fracarea_si_age
+  integer :: ih_seedling_layer_par_si_age
   integer :: ih_gpp_si_age
   integer :: ih_npp_si_age
   integer :: ih_ncl_si_age
@@ -4803,6 +4805,7 @@ contains
          hio_nonrx_intensity_si_age           => this%hvars(ih_nonrx_intensity_si_age)%r82d, &
          hio_npatches_si_age                  => this%hvars(ih_npatches_si_age)%r82d, &
          hio_canopy_fracarea_si_age           => this%hvars(ih_canopy_fracarea_si_age)%r82d, &
+         hio_seedling_layer_par_si_age        => this%hvars(ih_seedling_layer_par_si_age)%r82d, &
          hio_nplant_si_scag                   => this%hvars(ih_nplant_si_scag)%r82d, &
          hio_nplant_si_scagpft                => this%hvars(ih_nplant_si_scagpft)%r82d, &
          hio_nplant_canopy_si_scag            => this%hvars(ih_nplant_canopy_si_scag)%r82d, &
@@ -4883,6 +4886,12 @@ contains
                   hio_primarylands_fracarea_si_age(io_si,cpatch%age_class) & 
                   + patch_area_div_site_area
           endif
+
+          ! 24-hr mean PAR in MJ at the seedling layer, weighted by patch area / site area
+          hio_seedling_layer_par_si_age(io_si,cpatch%age_class) = &
+               hio_seedling_layer_par_si_age(io_si,cpatch%age_class) &
+               + cpatch%seedling_layer_par24%GetMean() * sec_per_day &
+               * megajoules_per_joule * patch_area_div_site_area
 
           !!!!!!!!!!!!!!!!!!!!!!!
           !!! Other weighting !!!
@@ -7346,6 +7355,13 @@ contains
                use_default='active',                                                 &
                avgflag='A', vtype=site_age_r8, hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,  &
                initialize=initialize_variables, index=ih_fracarea_si_age)
+
+          call this%set_history_var(vname='FATES_SEEDLING_LAYER_PAR_AP', units='MJ m-2 day-1', &
+               long='24-hour mean PAR at the seedling layer by patch age, per m2 land area'//  &
+               this%per_ageclass_norm_info('FATES_PATCHAREA/FATES_PATCHAREA_AP'),              &
+               use_default='active', avgflag='A', vtype=site_age_r8, hlms='CLM:ALM',           &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,           &
+               index=ih_seedling_layer_par_si_age)
 
           call this%set_history_var(vname='FATES_LAI_AP', units='m2 m-2',            &
                long='total leaf area index by age bin per m2 land area'//          &
