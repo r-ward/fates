@@ -16,6 +16,7 @@ module FatesHistoryInterfaceMod
   use FatesConstantsMod        , only : i_term_mort_type_numdens
   use FatesConstantsMod        , only : nocomp_bareground_land
   use FatesConstantsMod        , only : nocomp_bareground
+  use FatesConstantsMod        , only : TRS_regeneration
   use FatesGlobals             , only : fates_log
   use FatesGlobals             , only : endrun => fates_endrun
   use EDParamsMod              , only : nclmax, maxpft
@@ -55,6 +56,7 @@ module FatesHistoryInterfaceMod
   use FatesInterfaceTypesMod        , only : hlm_freq_day
   use FatesInterfaceTypesMod        , only : hlm_parteh_mode
   use FatesInterfaceTypesMod        , only : hlm_use_sp
+  use FatesInterfaceTypesMod        , only : hlm_regeneration_model
   use EDParamsMod              , only : comp_excln_exp
   use EDParamsMod              , only : ED_val_phen_coldtemp
   use EDParamsMod                   , only : nlevleaf
@@ -4442,10 +4444,13 @@ contains
                 hio_seeds_out_gc_si_pft(io_si,ft) = sites(s)%seed_out(ft)
                 hio_seeds_in_gc_si_pft(io_si,ft) = sites(s)%seed_in(ft)
 
-                ! Raw soil matric potential at each pft seedling rooting depth
-                ilayer_seedling_root = minloc(abs(bc_in(s)%z_sisl(:) - &
-                    EDPftvarcon_inst%seedling_root_depth(ft)), dim=1)
-                hio_seedling_layer_smp_si_pft(io_si, ft) = bc_in(s)%smp_sl(ilayer_seedling_root)
+                ! If using TRS regeneration model, record
+                ! raw soil matric potential at each pft seedling rooting depth
+                if (hlm_regeneration_model .eq. TRS_regeneration) then
+                    ilayer_seedling_root = minloc(abs(bc_in(s)%z_sisl(:) - &
+                         EDPftvarcon_inst%seedling_root_depth(ft)), dim=1)
+                    hio_seedling_layer_smp_si_pft(io_si, ft) = bc_in(s)%smp_sl(ilayer_seedling_root)
+               end if 
              end do
              sites(s)%recruitment_rate(:) = 0._r8
 
@@ -4896,11 +4901,14 @@ contains
                   + patch_area_div_site_area
           endif
 
-          ! 24-hr mean PAR in MJ at the seedling layer, weighted by patch area / site area
-          hio_seedling_layer_par_si_age(io_si,cpatch%age_class) = &
-               hio_seedling_layer_par_si_age(io_si,cpatch%age_class) &
-               + cpatch%seedling_layer_par24%GetMean() * sec_per_day &
-               * megajoules_per_joule * patch_area_div_site_area
+          ! If using TRS regeneration model, record 24-hr mean PAR in MJ 
+          ! at the seedling layer, weighted by patch area / site area
+          if (hlm_regeneration_model .eq. TRS_regeneration) then
+               hio_seedling_layer_par_si_age(io_si,cpatch%age_class) = &
+                    hio_seedling_layer_par_si_age(io_si,cpatch%age_class) &
+                    + cpatch%seedling_layer_par24%GetMean() * sec_per_day &
+                    * megajoules_per_joule * patch_area_div_site_area
+          end if
 
           !!!!!!!!!!!!!!!!!!!!!!!
           !!! Other weighting !!!
