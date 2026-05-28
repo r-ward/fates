@@ -2844,8 +2844,8 @@ contains
 
                ! keep track of how many individuals were recruited for passing to history
                currentSite%recruitment_rate(ft) = currentSite%recruitment_rate(ft) + cohort_n
-               currentSite%recruitment_rate_by_age(ft, currentPatch%age_class) = &
-                  currentSite%recruitment_rate_by_age(ft, currentPatch%age_class) + cohort_n
+               currentSite%recruitment_rate_by_age(currentPatch%age_class, ft) = &
+                  currentSite%recruitment_rate_by_age(currentPatch%age_class, ft) + cohort_n
 
             endif any_recruits
          endif use_this_pft_if

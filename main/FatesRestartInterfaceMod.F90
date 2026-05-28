@@ -2475,7 +2475,7 @@ contains
              do i_age = 1, nlevage
                 i_pftage = i_age + (i_pft - 1) * nlevage
                 rio_recrate_by_age_sift(io_idx_co_1st + i_pftage -1) = &
-                    sites(s)%recruitment_rate_by_age(i_pft, i_age)
+                    sites(s)%recruitment_rate_by_age(i_age, i_pft)
              end do
           end do
 
@@ -3522,7 +3522,7 @@ contains
              ! read rec rate x pft and patch age 
              do i_age = 1, nlevage
                 i_pftage = i_age + (i_pft - 1) * nlevage
-                sites(s)%recruitment_rate_by_age(i_pft, i_age) = &
+                sites(s)%recruitment_rate_by_age(i_age, i_pft) = &
                     rio_recrate_by_age_sift(io_idx_co_1st + i_pftage - 1)
              enddo
           enddo
