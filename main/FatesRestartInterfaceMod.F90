@@ -20,6 +20,7 @@ module FatesRestartInterfaceMod
   use FatesIOVariableKindMod,  only : fates_io_variable_kind_type
   use FatesRestartVariableMod, only : fates_restart_variable_type
   use FatesInterfaceTypesMod,  only : nlevcoage
+  use FatesInterfaceTypesMod,  only : nlevage
   use FatesInterfaceTypesMod,  only : bc_in_type
   use FatesInterfaceTypesMod,  only : bc_out_type
   use FatesInterfaceTypesMod,  only : hlm_use_planthydro
@@ -242,6 +243,7 @@ module FatesRestartInterfaceMod
   integer :: ir_seed_bank_sift
   integer :: ir_spread_si
   integer :: ir_recrate_sift
+  integer :: ir_recrate_by_age_sift
   integer :: ir_use_this_pft_sift
   integer :: ir_area_pft_sift
   integer :: ir_fmortrate_cano_siscpf
@@ -1389,6 +1391,11 @@ contains
          units='indiv/ha/day', flushval = flushzero, &
          hlms='CLM:ALM', initialize=initialize_variables, ivar=ivar, index = ir_recrate_sift)
 
+    call this%set_restart_var(vname='fates_recrate_by_age', vtype=cohort_r8, &
+         long_name='fates diagnostics on recruitment by patch age class', &
+         units='indiv/ha/day', flushval = flushzero, &
+         hlms='CLM:ALM', initialize=initialize_variables, ivar=ivar, index = ir_recrate_by_age_sift)
+
     call this%set_restart_var(vname='fates_use_this_pft', vtype=cohort_int, & !should this be cohort_int as above?
          long_name='in fixed biogeog mode, is pft in gridcell?', &
          units='0/1', flushval = flushone, &
@@ -2257,6 +2264,8 @@ contains
     integer  :: i_cacls          ! loop counter for cohort age class
     integer  :: i_cwd            ! loop counter for cwd
     integer  :: i_pft            ! loop counter for pft
+    integer  :: i_age            ! loop counter for patch age
+    integer  :: i_pftage         ! loop counter for pft x age
     integer  :: i_cdam           ! loop counter for damage
     integer  :: icdi             ! loop counter for damage
     integer  :: icdj             ! loop counter for damage
@@ -2346,6 +2355,7 @@ contains
            rio_recl2fr_sipfcl          => this%rvars(ir_recl2fr_sipfcl)%r81d, &
            rio_vegtempmem_sitm         => this%rvars(ir_vegtempmem_sitm)%r81d, &
            rio_recrate_sift            => this%rvars(ir_recrate_sift)%r81d, &
+           rio_recrate_by_age_sift     => this%rvars(ir_recrate_by_age_sift)%r81d, &
            rio_use_this_pft_sift       => this%rvars(ir_use_this_pft_sift)%int1d, &
            rio_area_pft_sift           => this%rvars(ir_area_pft_sift)%r81d, &
            rio_seed_in_sift            => this%rvars(ir_seed_in_sift)%r81d, &
@@ -2458,9 +2468,15 @@ contains
           io_idx_si_luludi  = io_idx_co_1st
           io_idx_si_lu   = io_idx_co_1st
 
-          ! recruitment rate
+          ! recruitment rate x pft 
           do i_pft = 1,numpft
              rio_recrate_sift(io_idx_co_1st+i_pft-1)   = sites(s)%recruitment_rate(i_pft)
+             ! recruitment rate by patch age x pft 
+             do i_age = 1, nlevage
+                i_pftage = i_age + (i_pft - 1) * nlevage
+                rio_recrate_by_age_sift(io_idx_co_1st + i_pftage -1) = &
+                    sites(s)%recruitment_rate_by_age(i_pft, i_age)
+             end do
           end do
 
           do i_pft = 1,numpft
@@ -3309,6 +3325,8 @@ contains
      integer  :: i_var            ! loop counter for PRT variables
      integer  :: i_pos            ! loop counter for discrete PRT positions
      integer  :: i_pft            ! loop counter for pft
+     integer  :: i_age            ! loop counter for patch age
+     integer  :: i_pftage         ! loop counter for pft x age
      integer  :: i_scls           ! loop counter for size-clas
      integer  :: i_cacls          ! loop counter for cohort age class
      integer  :: i_cdam           ! loop counter for damage class
@@ -3395,6 +3413,7 @@ contains
           rio_recl2fr_sipfcl          => this%rvars(ir_recl2fr_sipfcl)%r81d, &
           rio_vegtempmem_sitm         => this%rvars(ir_vegtempmem_sitm)%r81d, &
           rio_recrate_sift            => this%rvars(ir_recrate_sift)%r81d, &
+          rio_recrate_by_age_sift     => this%rvars(ir_recrate_by_age_sift)%r81d, &
           rio_use_this_pft_sift       => this%rvars(ir_use_this_pft_sift)%int1d, &
           rio_area_pft_sift           => this%rvars(ir_area_pft_sift)%r81d,&
           rio_seed_in_sift            => this%rvars(ir_seed_in_sift)%r81d, &
@@ -3500,6 +3519,12 @@ contains
           ! read seed_bank info(site-level, but PFT-resolved)
           do i_pft = 1,numpft
              sites(s)%recruitment_rate(i_pft) = rio_recrate_sift(io_idx_co_1st+i_pft-1)
+             ! read rec rate x pft and patch age 
+             do i_age = 1, nlevage
+                i_pftage = i_age + (i_pft - 1) * nlevage
+                sites(s)%recruitment_rate_by_age(i_pft, i_age) = &
+                    rio_recrate_by_age_sift(io_idx_co_1st + i_pftage - 1)
+             enddo
           enddo
 
           ! variables for fixed biogeography mode. These are currently used in restart even when this is off.
