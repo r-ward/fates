@@ -147,6 +147,7 @@ contains
     allocate(site_in%term_nindivs_ustory(1:n_term_mort_types,1:nlevsclass,1:numpft))
     allocate(site_in%demotion_rate(1:nlevsclass))
     allocate(site_in%promotion_rate(1:nlevsclass))
+    allocate(site_in%recruitment_rate_by_age(1:maxpft, 1:nlevage))
     allocate(site_in%imort_rate(1:nlevsclass,1:numpft))
     allocate(site_in%fmort_rate_canopy(1:nlevsclass,1:numpft))
     allocate(site_in%fmort_rate_ustory(1:nlevsclass,1:numpft))
@@ -356,6 +357,7 @@ contains
     site_in%term_carbonflux_canopy(:,:) = 0._r8
     site_in%term_carbonflux_ustory(:,:) = 0._r8
     site_in%recruitment_rate(:) = 0._r8
+    site_in%recruitment_rate_by_age(:,:) = 0._r8
     site_in%imort_rate(:,:) = 0._r8
     site_in%imort_carbonflux(:) = 0._r8
     site_in%fmort_rate_canopy(:,:) = 0._r8

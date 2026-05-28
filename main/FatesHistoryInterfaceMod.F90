@@ -393,6 +393,7 @@ module FatesHistoryInterfaceMod
   ! Indices to site by patch age by pft variables
   integer :: ih_biomass_si_agepft
   integer :: ih_npp_si_agepft
+  integer :: ih_recruitment_si_agepft
   integer :: ih_scorch_height_si_pft
   integer :: ih_scorch_height_si_agepft
 
@@ -4780,7 +4781,7 @@ contains
 
     type(fates_cohort_type), pointer :: ccohort
     type(fates_patch_type),  pointer :: cpatch
-    integer :: s, ft, iagepft, i_agefuel, iscag, iscagpft, i_fuel, i_scls, io_si
+    integer :: s, ft, iagepft, i_agefuel, iscag, iscagpft, i_fuel, i_scls, io_si, i_age
     integer :: iscag_anthrodist  ! what is the equivalent age class for
                                  ! time-since-anthropogenic-disturbance of secondary forest
     real(r8) :: mort
@@ -4811,6 +4812,7 @@ contains
          hio_mortality_understory_si_scag     => this%hvars(ih_mortality_understory_si_scag)%r82d, &
          hio_biomass_si_age        => this%hvars(ih_biomass_si_age)%r82d, &
          hio_biomass_si_agepft                => this%hvars(ih_biomass_si_agepft)%r82d, &
+         hio_recruitment_si_agepft            => this%hvars(ih_recruitment_si_agepft)%r82d, &
          hio_npp_si_age                       => this%hvars(ih_npp_si_age)%r82d, &
          hio_npp_si_agepft                    => this%hvars(ih_npp_si_agepft)%r82d, &
          hio_ddbh_canopy_si_scag              => this%hvars(ih_ddbh_canopy_si_scag)%r82d, &
@@ -4832,6 +4834,17 @@ contains
 
     siteloop: do s = 1,nsites
        io_si  = sites(s)%h_gid
+
+       ! recruitment rate by patch age x pft (already aggregated at site level)
+       do ft = 1, numpft
+          do i_age = 1, nlevage
+             iagepft = i_age + (ft - 1) * nlevage
+             hio_recruitment_si_agepft(io_si, iagepft) =                        &
+                  sites(s)%recruitment_rate_by_age(ft, i_age) * days_per_year / &
+                  m2_per_ha
+          end do
+       end do
+       sites(s)%recruitment_rate_by_age(:,:) = 0._r8
 
        ! Loop through patches to sum up diagnostics
        cpatch => sites(s)%oldest_patch
@@ -7936,6 +7949,13 @@ contains
                use_default='inactive', avgflag='A', vtype=site_agepft_r8,           &
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,                                 &
                initialize=initialize_variables, index = ih_biomass_si_agepft)
+          
+          call this%set_history_var(vname='FATES_RECRUITMENT_APPF',units='ha-1 yr-1', &
+               long='recruitment rate by patch age and PFT'                           &
+               //this%per_ageclass_norm_info('FATES_PATCHAREA/FATES_PATCHAREA_AP'),   &
+               use_default='active', avgflag='A', vtype=site_agepft_r8, hlms='CLM:ALM', &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,  &
+               index=ih_recruitment_si_agepft)
 
           call this%set_history_var(vname='FATES_SCORCH_HEIGHT_APPF',units = 'm',    &
                long='SPITFIRE flame Scorch Height (calculated per PFT in each patch age bin)'// &

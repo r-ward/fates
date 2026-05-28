@@ -31,6 +31,7 @@ module EDTypesMod
   use FatesInterfaceTypesMod,only : bc_out_type
   use FatesConstantsMod    , only : n_landuse_cats
   use FatesInterfaceTypesMod,only : hlm_parteh_mode
+  use FatesInterfaceTypesMod,only : nlevage
   use FatesCohortMod,        only : fates_cohort_type
   use FatesPatchMod,         only : fates_patch_type
   use EDParamsMod,           only : nclmax, nlevleaf, maxpft
@@ -534,6 +535,7 @@ module EDTypesMod
      real(r8) :: demotion_carbonflux                     ! biomass of demoted individuals from canopy to understory [kgC/ha/day]
      real(r8) :: promotion_carbonflux                    ! biomass of promoted individuals from understory to canopy [kgC/ha/day]
      real(r8) :: recruitment_rate(1:maxpft)              ! number of individuals that were recruited into new cohorts
+     real(r8), allocatable :: recruitment_rate_by_age(:,:)! recruitment count by pft x patch age class
      real(r8), allocatable :: demotion_rate(:)           ! rate of individuals demoted from canopy to understory per FATES timestep
      real(r8), allocatable :: promotion_rate(:)          ! rate of individuals promoted from understory to canopy per FATES timestep
      real(r8), allocatable :: imort_rate(:,:)            ! rate of individuals killed due to impact mortality per year.  on size x pft array
