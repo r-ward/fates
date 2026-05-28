@@ -628,6 +628,7 @@ module FatesHistoryInterfaceMod
   integer :: ih_leafbiomass_si_pft
   integer :: ih_storebiomass_si_pft
   integer :: ih_nindivs_si_pft
+  integer :: ih_seedling_layer_smp_si_pft
   integer :: ih_recruitment_si_pft
   integer :: ih_recruitment_cflux_si_pft
   integer :: ih_mortality_si_pft
@@ -3112,6 +3113,7 @@ contains
     real(r8) :: fnrt_m_net_alloc   ! mass allocated to fine-root [kg/yr]
     real(r8) :: struct_m_net_alloc ! mass allocated to structure [kg/yr]
     real(r8) :: repro_m_net_alloc  ! mass allocated to reproduction [kg/yr]
+    integer  :: ilayer_seedling_root ! soil layer for seedling rooting depth
     real(r8) :: n_perm2            ! abundance per m2
     integer  :: iscag_anthrodist  ! what is the equivalent age class for
                                   ! time-since-anthropogenic-disturbance of secondary forest
@@ -3151,6 +3153,7 @@ contains
          hio_leafbiomass_si_pft  => this%hvars(ih_leafbiomass_si_pft)%r82d, &
          hio_storebiomass_si_pft => this%hvars(ih_storebiomass_si_pft)%r82d, &
          hio_nindivs_si_pft      => this%hvars(ih_nindivs_si_pft)%r82d, &
+         hio_seedling_layer_smp_si_pft => this%hvars(ih_seedling_layer_smp_si_pft)%r82d, &
          hio_recruitment_si_pft  => this%hvars(ih_recruitment_si_pft)%r82d, &
          hio_recruitment_cflux_si_pft  => this%hvars(ih_recruitment_cflux_si_pft)%r82d, &
          hio_seeds_out_gc_si_pft => this%hvars(ih_seeds_out_gc_si_pft)%r82d, &
@@ -4430,6 +4433,7 @@ contains
              end if
 
              ! pass the recruitment rate as a flux to the history, and then reset the recruitment buffer
+             ! pass seedling layer soil matric potential to history 
              do ft = 1, numpft
                 ! pass the recruitment rate as a flux to the history, and then reset the recruitment buffer
                 hio_recruitment_si_pft(io_si,ft) = sites(s)%recruitment_rate(ft) * days_per_year / m2_per_ha
@@ -4437,6 +4441,11 @@ contains
                 ! Gridcell output and inputs
                 hio_seeds_out_gc_si_pft(io_si,ft) = sites(s)%seed_out(ft)
                 hio_seeds_in_gc_si_pft(io_si,ft) = sites(s)%seed_in(ft)
+
+                ! Raw soil matric potential at each pft seedling rooting depth
+                ilayer_seedling_root = minloc(abs(bc_in(s)%z_sisl(:) - &
+                    EDPftvarcon_inst%seedling_root_depth(ft)), dim=1)
+                hio_seedling_layer_smp_si_pft(io_si, ft) = bc_in(s)%smp_sl(ilayer_seedling_root)
              end do
              sites(s)%recruitment_rate(:) = 0._r8
 
@@ -7177,6 +7186,12 @@ contains
                use_default='active', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM', &
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
                index=ih_recruitment_cflux_si_pft)
+          
+          call this%set_history_var(vname='FATES_SEEDLING_LAYER_SMP_PF', units='mm', &
+               long='soil matric potential at the PFT seedling rooting depth (negative)', &
+               use_default='active', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM', &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables, &
+               index=ih_seedling_layer_smp_si_pft)
 
           call this%set_history_var(vname='FATES_LEAFC_PF', units='kg m-2',          &
                long='total PFT-level leaf biomass in kg carbon per m2 land area',    &
