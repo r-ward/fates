@@ -4841,7 +4841,7 @@ contains
           do i_age = 1, nlevage
              iagepft = i_age + (ft - 1) * nlevage
              hio_recruitment_si_agepft(io_si, iagepft) =                        &
-                  sites(s)%recruitment_rate_by_age(ft, i_age) * days_per_year / &
+                  sites(s)%recruitment_rate_by_age(i_age, ft) * days_per_year / &
                   m2_per_ha
           end do
        end do
