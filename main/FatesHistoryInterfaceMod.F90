@@ -4436,7 +4436,6 @@ contains
              end if
 
              ! pass the recruitment rate as a flux to the history, and then reset the recruitment buffer
-             ! pass seedling layer soil matric potential to history 
              do ft = 1, numpft
                 ! pass the recruitment rate as a flux to the history, and then reset the recruitment buffer
                 hio_recruitment_si_pft(io_si,ft) = sites(s)%recruitment_rate(ft) * days_per_year / m2_per_ha
@@ -4444,16 +4443,18 @@ contains
                 ! Gridcell output and inputs
                 hio_seeds_out_gc_si_pft(io_si,ft) = sites(s)%seed_out(ft)
                 hio_seeds_in_gc_si_pft(io_si,ft) = sites(s)%seed_in(ft)
-
-                ! If using TRS regeneration model, record
-                ! raw soil matric potential at each pft seedling rooting depth
-                if (hlm_regeneration_model .eq. TRS_regeneration) then
-                    ilayer_seedling_root = minloc(abs(bc_in(s)%z_sisl(:) - &
-                         EDPftvarcon_inst%seedling_root_depth(ft)), dim=1)
-                    hio_seedling_layer_smp_si_pft(io_si, ft) = bc_in(s)%smp_sl(ilayer_seedling_root)
-               end if 
              end do
              sites(s)%recruitment_rate(:) = 0._r8
+
+             ! if using TRS regeneration model, record
+             ! raw soil matric potential at each pft seedling rooting depth
+             if (hlm_regeneration_model .eq. TRS_regeneration) then
+                do ft = 1, numpft
+                   ilayer_seedling_root = minloc(abs(bc_in(s)%z_sisl(:) - &
+                         EDPftvarcon_inst%seedling_root_depth(ft)), dim=1)
+                   hio_seedling_layer_smp_si_pft(io_si, ft) = bc_in(s)%smp_sl(ilayer_seedling_root)
+                end do
+             end if 
 
              ! summarize all of the mortality fluxes by PFT
              do ft = 1, numpft
