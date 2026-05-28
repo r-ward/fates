@@ -7951,8 +7951,8 @@ contains
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,                                 &
                initialize=initialize_variables, index = ih_biomass_si_agepft)
           
-          call this%set_history_var(vname='FATES_RECRUITMENT_APPF',units='ha-1 yr-1', &
-               long='recruitment rate by patch age and PFT'                           &
+          call this%set_history_var(vname='FATES_RECRUITMENT_APPF',units='m-2 yr-1', &
+               long='recruitment rate by patch age and PFT in individuals per m2 land area per year' &
                //this%per_ageclass_norm_info('FATES_PATCHAREA/FATES_PATCHAREA_AP'),   &
                use_default='active', avgflag='A', vtype=site_agepft_r8, hlms='CLM:ALM', &
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,  &
