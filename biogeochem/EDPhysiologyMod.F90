@@ -552,19 +552,19 @@ contains
 
        do pft = 1,numpft
 
-         ! Calculate net available seed after inputs and decay
-         net_seed_available = litt%seed(pft) + litt%seed_in_local(pft) + &
-            litt%seed_in_extern(pft) - litt%seed_decay(pft)
+          ! Calculate net available seed after inputs and decay
+          net_seed_available = litt%seed(pft) + litt%seed_in_local(pft) + &
+               litt%seed_in_extern(pft) - litt%seed_decay(pft)
 
-         ! Cap germination at available seed to prevent negative seed pool
-         litt%seed_germ_in(pft) = min(litt%seed_germ_in(pft), net_seed_available)
+          ! Cap germination at available seed to prevent negative seed pool
+          litt%seed_germ_in(pft) = min(litt%seed_germ_in(pft), net_seed_available)
 
-         ! Update pools 
-         litt%seed(pft) = net_seed_available - litt%seed_germ_in(pft)
+          ! Update pools
+          litt%seed(pft) = net_seed_available - litt%seed_germ_in(pft)
 
-         ! Note that the recruitment scheme will use seed_germ
-         ! for its construction costs.
-         litt%seed_germ(pft) = litt%seed_germ(pft) + &
+          ! Note that the recruitment scheme will use seed_germ
+          ! for its construction costs.
+          litt%seed_germ(pft) = litt%seed_germ(pft) + &
                litt%seed_germ_in(pft) - &
                litt%seed_germ_decay(pft)
 
@@ -2327,7 +2327,7 @@ contains
           seedling_mdds = currentPatch%sdlng_mdd(pft)%p%GetMean()
           
           ! Calculate seedling mortality as a function of moisture deficit days (mdd)
-          ! If the seedling mmd value is below a critical threshold then moisture-based mortality is zero
+          ! If the seedling mdd value is below a critical threshold then moisture-based mortality is zero
           
           if (seedling_mdds < EDPftvarcon_inst%seedling_mdd_crit(pft)) then
              seedling_h2o_mort_rate = 0.0_r8
@@ -2336,12 +2336,12 @@ contains
                   EDPftvarcon_inst%seedling_h2o_mort_b(pft) * seedling_mdds + &
                   EDPftvarcon_inst%seedling_h2o_mort_c(pft)
              ! Cap h2o mortality rate at 1, quadratic can produce values >1 for large moisture
-             ! deficit days, if rate exceeds 1 write to fates log 
+             ! deficit days, if rate exceeds 1 write to fates log
 
              if (seedling_h2o_mort_rate > 1.0_r8) then
                write(fates_log(), *) 'TRS seedling_h2o_mort_rate > 1', &
                      'pft=', pft, 'uncapped=', seedling_h2o_mort_rate, 'mdds=', seedling_mdds
-             end if 
+             end if
              seedling_h2o_mort_rate = min(1.0_r8, seedling_h2o_mort_rate)
           end if ! mdd threshold check
           
@@ -2351,10 +2351,10 @@ contains
           total_seedling_mort_rate = seedling_light_mort_rate + &
                         seedling_h2o_mort_rate + &
                         (EDPftvarcon_inst%background_seedling_mort(pft) * years_per_day)
-          if (total_seedling_mort_rate > 1.0_r8) then 
+          if (total_seedling_mort_rate > 1.0_r8) then
             write(fates_log(), *) 'TRS total seedling mortality rate > 1', &
                   'pft=', pft, 'uncapped=', total_seedling_mort_rate, &
-                  'seedling_light_mort_rate=', seedling_light_mort_rate, & 
+                  'seedling_light_mort_rate=', seedling_light_mort_rate, &
                   'seedling_h2o_mort_rate=', seedling_h2o_mort_rate
           end if
           litt%seed_germ_decay(pft) = litt%seed_germ(pft) * &
@@ -2465,13 +2465,13 @@ contains
              seedling_emerg_rate = photoblastic_germ_modifier * EDPftvarcon_inst%a_emerg(pft) * &
                   wetness_index**EDPftvarcon_inst%b_emerg(pft)
              ! Cap emergence rate at 1, rate can exceed 1 for some parameter combinations,
-             ! leading to negative seed bank, write to log if this is the case 
+             ! leading to negative seed bank, write to log if this is the case
              if (seedling_emerg_rate > 1.0_r8) then
                write(fates_log(),*) 'TRS seedling_emerg_rate > 1', &
                      'pft=', pft, 'uncapped=', seedling_emerg_rate, &
                      'photoblastic_germ_modifier=', photoblastic_germ_modifier, &
                      'wetness_index=', wetness_index
-             end if 
+             end if
              seedling_emerg_rate = min(1.0_r8, seedling_emerg_rate )
           else 
 
@@ -2704,20 +2704,20 @@ contains
                      sdlng2sap_rate = EDPftvarcon_inst%seedling_light_rec_a(ft)*             &
                         sdlng2sap_par**EDPftvarcon_inst%seedling_light_rec_b(ft)
 
-                     ! If the seedling to sapling transition rate exceeds 1, 
-                     ! cap at 1 (prevent seed_germ from going negative) and write to fates log 
+                     ! If the seedling to sapling transition rate exceeds 1,
+                     ! cap at 1 (prevent seed_germ from going negative) and write to fates log
 
                      if (sdlng2sap_rate > 1.0_r8) then
                         write(fates_log(), *) 'TRS seedling-to-sapling transition rate > 1', &
                               'pft=', ft, 'uncapped=', sdlng2sap_rate,         &
                               'sdlng2sap_par=', sdlng2sap_par
-                     end if 
+                     end if
 
                      mass_avail = currentPatch%area*                           &
                         currentPatch%litter(el)%seed_germ(ft)*                 & 
                         min(1.0_r8, sdlng2sap_rate)
                      
-                     ! If soil moisture is below pft-specific seedling  moisture stress threshold the 
+                     ! If soil moisture is below pft-specific seedling  moisture stress threshold the
                      ! recruitment does not occur.
                      ilayer_seedling_root = minloc(abs(bc_in%z_sisl(:) -       &
                         EDPftvarcon_inst%seedling_root_depth(ft)), dim=1)
@@ -2726,7 +2726,7 @@ contains
 
                      if (seedling_layer_smp < EDPftvarcon_inst%seedling_psi_crit(ft)) then
                         mass_avail = 0.0_r8
-                     end if 
+                     end if
 
                   end if ! End use TRS with seedling dynamics
 

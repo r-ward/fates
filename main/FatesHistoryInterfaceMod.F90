@@ -4454,7 +4454,7 @@ contains
                          EDPftvarcon_inst%seedling_root_depth(ft)), dim=1)
                    hio_seedling_layer_smp_si_pft(io_si, ft) = bc_in(s)%smp_sl(ilayer_seedling_root)
                 end do
-             end if 
+             end if
 
              ! summarize all of the mortality fluxes by PFT
              do ft = 1, numpft
@@ -4915,7 +4915,7 @@ contains
                   + patch_area_div_site_area
           endif
 
-          ! If using TRS regeneration model, record 24-hr mean PAR in MJ 
+          ! If using TRS regeneration model, record 24-hr mean PAR in W/m2
           ! at the seedling layer, weighted by patch area / site area
           if (hlm_regeneration_model .eq. TRS_regeneration) then
                hio_seedling_layer_par_si_age(io_si,cpatch%age_class) = &
