@@ -4920,8 +4920,7 @@ contains
           if (hlm_regeneration_model .eq. TRS_regeneration) then
                hio_seedling_layer_par_si_age(io_si,cpatch%age_class) = &
                     hio_seedling_layer_par_si_age(io_si,cpatch%age_class) &
-                    + cpatch%seedling_layer_par24%GetMean() * sec_per_day &
-                    * megajoules_per_joule * patch_area_div_site_area
+                    + cpatch%seedling_layer_par24%GetMean() * patch_area_div_site_area
           end if
 
           !!!!!!!!!!!!!!!!!!!!!!!
@@ -7209,9 +7208,9 @@ contains
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
                index=ih_recruitment_cflux_si_pft)
           
-          call this%set_history_var(vname='FATES_SEEDLING_LAYER_SMP_PF', units='mm', &
-               long='soil matric potential at the PFT seedling rooting depth (negative)', &
-               use_default='active', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM', &
+          call this%set_history_var(vname='FATES_SEEDLING_LAYER_SMP_PF', units='mm suction', &
+               long='soil matric potential in mm H2O suction (negative) at the PFT seedling rooting depth', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM', &
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables, &
                index=ih_seedling_layer_smp_si_pft)
 
@@ -7393,10 +7392,10 @@ contains
                avgflag='A', vtype=site_age_r8, hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,  &
                initialize=initialize_variables, index=ih_fracarea_si_age)
 
-          call this%set_history_var(vname='FATES_SEEDLING_LAYER_PAR_AP', units='MJ m-2 day-1', &
+          call this%set_history_var(vname='FATES_SEEDLING_LAYER_PAR_AP', units='W m-2', &
                long='24-hour mean PAR at the seedling layer by patch age, per m2 land area'//  &
                this%per_ageclass_norm_info('FATES_PATCHAREA/FATES_PATCHAREA_AP'),              &
-               use_default='active', avgflag='A', vtype=site_age_r8, hlms='CLM:ALM',           &
+               use_default='inactive', avgflag='A', vtype=site_age_r8, hlms='CLM:ALM',           &
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,           &
                index=ih_seedling_layer_par_si_age)
 
