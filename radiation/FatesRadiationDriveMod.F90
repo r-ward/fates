@@ -199,7 +199,15 @@ contains
                         end if
                      end do
 
-                     ! Fill in the diagnostic arrays for normalized radiation profiles
+                     ! Fill in the diagnostic arrays for normalized radiation profiles.
+                     ! Set the direct and diffuse boundary conditions to 1 so that the query routines
+                     ! report a normalized profile (fraction of incoming light per layer). These are
+                     ! scaled by the actual forcing where they are used (FatesInterfaceMod,
+                     ! FatesHistoryInterfaceMod).
+                     do ib = 1,num_swb
+                        twostr%band(ib)%Rbeam_atm = 1._r8
+                        twostr%band(ib)%Rdiff_atm = 1._r8
+                     end do
                      do_cl: do cl = 1,twostr%n_lyr
                         do_icol: do icol = 1,twostr%n_col(cl)
                            ft = twostr%scelg(cl,icol)%pft
@@ -218,7 +226,14 @@ contains
                            end if if_notair
                         end do do_icol
                      end do do_cl
-                     
+
+                     ! Reset boundary conditions back to unknwon, as Solve() does after a normalized
+                     ! solution, so the flux query routines are not called incorrectly afterward.
+                     do ib = 1,num_swb
+                        twostr%band(ib)%Rbeam_atm = fates_unset_r8
+                        twostr%band(ib)%Rdiff_atm = fates_unset_r8
+                     end do
+
                    end associate
                 end select
              endif if_zenith_flag
