@@ -2336,12 +2336,7 @@ contains
                   EDPftvarcon_inst%seedling_h2o_mort_b(pft) * seedling_mdds + &
                   EDPftvarcon_inst%seedling_h2o_mort_c(pft)
              ! Cap h2o mortality rate at 1, quadratic can produce values >1 for large moisture
-             ! deficit days, if rate exceeds 1 write to fates log 
-
-             if (seedling_h2o_mort_rate > 1.0_r8) then
-               write(fates_log(), *) 'TRS seedling_h2o_mort_rate > 1', &
-                     'pft=', pft, 'uncapped=', seedling_h2o_mort_rate, 'mdds=', seedling_mdds
-             end if 
+             ! deficit days 
              seedling_h2o_mort_rate = min(1.0_r8, seedling_h2o_mort_rate)
           end if ! mdd threshold check
           
@@ -2351,12 +2346,6 @@ contains
           total_seedling_mort_rate = seedling_light_mort_rate + &
                         seedling_h2o_mort_rate + &
                         (EDPftvarcon_inst%background_seedling_mort(pft) * years_per_day)
-          if (total_seedling_mort_rate > 1.0_r8) then 
-            write(fates_log(), *) 'TRS total seedling mortality rate > 1', &
-                  'pft=', pft, 'uncapped=', total_seedling_mort_rate, &
-                  'seedling_light_mort_rate=', seedling_light_mort_rate, & 
-                  'seedling_h2o_mort_rate=', seedling_h2o_mort_rate
-          end if
           litt%seed_germ_decay(pft) = litt%seed_germ(pft) * &
             min(1.0_r8, total_seedling_mort_rate)
 
@@ -2465,13 +2454,7 @@ contains
              seedling_emerg_rate = photoblastic_germ_modifier * EDPftvarcon_inst%a_emerg(pft) * &
                   wetness_index**EDPftvarcon_inst%b_emerg(pft)
              ! Cap emergence rate at 1, rate can exceed 1 for some parameter combinations,
-             ! leading to negative seed bank, write to log if this is the case 
-             if (seedling_emerg_rate > 1.0_r8) then
-               write(fates_log(),*) 'TRS seedling_emerg_rate > 1', &
-                     'pft=', pft, 'uncapped=', seedling_emerg_rate, &
-                     'photoblastic_germ_modifier=', photoblastic_germ_modifier, &
-                     'wetness_index=', wetness_index
-             end if 
+             ! leading to negative seed bank
              seedling_emerg_rate = min(1.0_r8, seedling_emerg_rate )
           else 
 
@@ -2705,14 +2688,7 @@ contains
                         sdlng2sap_par**EDPftvarcon_inst%seedling_light_rec_b(ft)
 
                      ! If the seedling to sapling transition rate exceeds 1, 
-                     ! cap at 1 (prevent seed_germ from going negative) and write to fates log 
-
-                     if (sdlng2sap_rate > 1.0_r8) then
-                        write(fates_log(), *) 'TRS seedling-to-sapling transition rate > 1', &
-                              'pft=', ft, 'uncapped=', sdlng2sap_rate,         &
-                              'sdlng2sap_par=', sdlng2sap_par
-                     end if 
-
+                     ! cap at 1 (prevent seed_germ from going negative)
                      mass_avail = currentPatch%area*                           &
                         currentPatch%litter(el)%seed_germ(ft)*                 & 
                         min(1.0_r8, sdlng2sap_rate)
