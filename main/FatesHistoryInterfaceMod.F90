@@ -394,6 +394,7 @@ module FatesHistoryInterfaceMod
   integer :: ih_biomass_si_agepft
   integer :: ih_npp_si_agepft
   integer :: ih_recruitment_si_agepft
+  integer :: ih_seedling_pool_si_agepft
   integer :: ih_scorch_height_si_pft
   integer :: ih_scorch_height_si_agepft
 
@@ -661,6 +662,8 @@ module FatesHistoryInterfaceMod
   integer :: ih_seeds_in_local_si_pft     ! carbon only
   integer :: ih_ungerm_seed_bank_si_pft   ! carbon only
   integer :: ih_seedling_pool_si_pft      ! carbon only
+  integer :: ih_seed_germ_in_si_pft       ! carbon only
+  integer :: ih_seedling_mort_si_pft      ! carbon only
 
   ! Non-per-ageclass equivalents of per-ageclass variables
   integer :: ih_canopy_fracarea_si
@@ -3339,6 +3342,8 @@ contains
              hio_seed_bank_si_pft                 => this%hvars(ih_seed_bank_si_pft)%r82d, &
              hio_ungerm_seed_bank_si_pft          => this%hvars(ih_ungerm_seed_bank_si_pft)%r82d, &
              hio_seedling_pool_si_pft             => this%hvars(ih_seedling_pool_si_pft)%r82d, &
+             hio_seed_germ_in_si_pft              => this%hvars(ih_seed_germ_in_si_pft)%r82d, &
+             hio_seedling_mort_si_pft             => this%hvars(ih_seedling_mort_si_pft)%r82d, &
              hio_seeds_in_si_pft                  => this%hvars(ih_seeds_in_si_pft)%r82d, &
              hio_seeds_in_local_si_pft            => this%hvars(ih_seeds_in_local_si_pft)%r82d, &
              hio_disturbance_rate_si_lulu         => this%hvars(ih_disturbance_rate_si_lulu)%r82d, &
@@ -4225,6 +4230,14 @@ contains
                         litt_c%seed_in_local(i_pft) * &
                         cpatch%area * AREA_INV * days_per_sec
 
+                   ! Germination flux into seedling pool
+                   hio_seed_germ_in_si_pft(io_si,i_pft) = hio_seed_germ_in_si_pft(io_si,i_pft) + &
+                        litt_c%seed_germ_in(i_pft) * cpatch%area * AREA_INV * days_per_sec
+
+                   ! Seedling mortality flux out of seedling pool
+                   hio_seedling_mort_si_pft(io_si,i_pft) = hio_seedling_mort_si_pft(io_si,i_pft) + &
+                        litt_c%seed_germ_decay(i_pft) * cpatch%area * AREA_INV * days_per_sec
+
                 end do
 
                 do i_cwd = 1, ncwd
@@ -4782,6 +4795,8 @@ contains
 
     type(fates_cohort_type), pointer :: ccohort
     type(fates_patch_type),  pointer :: cpatch
+    type(litter_type),       pointer :: litt_c
+
     integer :: s, ft, iagepft, i_agefuel, iscag, iscagpft, i_fuel, i_scls, io_si, i_age
     integer :: iscag_anthrodist  ! what is the equivalent age class for
                                  ! time-since-anthropogenic-disturbance of secondary forest
@@ -4814,6 +4829,7 @@ contains
          hio_biomass_si_age        => this%hvars(ih_biomass_si_age)%r82d, &
          hio_biomass_si_agepft                => this%hvars(ih_biomass_si_agepft)%r82d, &
          hio_recruitment_si_agepft            => this%hvars(ih_recruitment_si_agepft)%r82d, &
+         hio_seedling_pool_si_agepft          => this%hvars(ih_seedling_pool_si_agepft)%r82d, &
          hio_npp_si_age                       => this%hvars(ih_npp_si_age)%r82d, &
          hio_npp_si_agepft                    => this%hvars(ih_npp_si_agepft)%r82d, &
          hio_ddbh_canopy_si_scag              => this%hvars(ih_ddbh_canopy_si_scag)%r82d, &
@@ -4862,10 +4878,17 @@ contains
           hio_fracarea_si_age(io_si,cpatch%age_class) = hio_fracarea_si_age(io_si,cpatch%age_class) &
           + cpatch%area * AREA_INV
 
+          litt_c => cpatch%litter(element_pos(carbon12_element))
+
           do ft = 1,numpft
              iagepft = get_agepft_class_index(cpatch%age,ft)
              hio_scorch_height_si_agepft(io_si,iagepft) = hio_scorch_height_si_agepft(io_si,iagepft) + &
                   cpatch%Scorch_ht(ft) * patch_area_div_site_area
+
+             ! seedling pool by patch age x pft, TRS tracks seedlings in 'seed_germ'
+             hio_seedling_pool_si_agepft(io_si,iagepft) = &
+                  hio_seedling_pool_si_agepft(io_si,iagepft) + &
+                  litt_c%seed_germ(ft) * patch_area_div_site_area
           end do
 
           hio_ncl_si_age(io_si,cpatch%age_class) = hio_ncl_si_age(io_si,cpatch%age_class) &
@@ -7295,6 +7318,18 @@ contains
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
                index = ih_seedling_pool_si_pft)
 
+          call this%set_history_var(vname='FATES_SEED_GERM_PF', units='kg m-2 s-1',       &
+               long='germination flux from the seed bank into the seedling pool per PFT in kg carbon per m2 land area per second', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',    &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,      &
+               index=ih_seed_germ_in_si_pft)
+
+          call this%set_history_var(vname='FATES_SEEDLING_MORT_PF', units='kg m-2 s-1',    &
+               long='total seedling mortality flux from the seedling pool to litter per PFT in kg carbon per m2 land area per second', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',     &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,       &
+               index = ih_seedling_mort_si_pft)
+
           call this%set_history_var(vname='FATES_SEEDS_IN_PF', units='kg m-2 s-1',      &
                long='seed production rate per PFT in kg carbon per m2 second',               &
                use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',     &
@@ -7956,6 +7991,13 @@ contains
                use_default='active', avgflag='A', vtype=site_agepft_r8, hlms='CLM:ALM', &
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,  &
                index=ih_recruitment_si_agepft)
+
+          call this%set_history_var(vname='FATES_SEEDLING_POOL_APPF', units='kg m-2',      &
+               long='seedling (germinated seed) mass by patch age and PFT in kg carbon per m2 land area' &
+               //this%per_ageclass_norm_info('FATES_PATCHAREA/FATES_PATCHAREA_AP'),        &
+               use_default='inactive', avgflag='A', vtype=site_agepft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,       &
+               index = ih_seedling_pool_si_agepft)
 
           call this%set_history_var(vname='FATES_SCORCH_HEIGHT_APPF',units = 'm',    &
                long='SPITFIRE flame Scorch Height (calculated per PFT in each patch age bin)'// &
