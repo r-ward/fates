@@ -661,6 +661,7 @@ module FatesHistoryInterfaceMod
   integer :: ih_seeds_in_si_pft           ! carbon only
   integer :: ih_seeds_in_local_si_pft     ! carbon only
   integer :: ih_ungerm_seed_bank_si_pft   ! carbon only
+  integer :: ih_seed_decay_si_pft         ! carbon only
   integer :: ih_seedling_pool_si_pft      ! carbon only
   integer :: ih_seed_germ_in_si_pft       ! carbon only
   integer :: ih_seedling_mort_si_pft      ! carbon only
@@ -3341,6 +3342,7 @@ contains
              hio_elong_factor_si_pft              => this%hvars(ih_elong_factor_si_pft)%r82d, &
              hio_seed_bank_si_pft                 => this%hvars(ih_seed_bank_si_pft)%r82d, &
              hio_ungerm_seed_bank_si_pft          => this%hvars(ih_ungerm_seed_bank_si_pft)%r82d, &
+             hio_seed_decay_si_pft                => this%hvars(ih_seed_decay_si_pft)%r82d, &
              hio_seedling_pool_si_pft             => this%hvars(ih_seedling_pool_si_pft)%r82d, &
              hio_seed_germ_in_si_pft              => this%hvars(ih_seed_germ_in_si_pft)%r82d, &
              hio_seedling_mort_si_pft             => this%hvars(ih_seedling_mort_si_pft)%r82d, &
@@ -4229,6 +4231,10 @@ contains
                    hio_seeds_in_local_si_pft(io_si,i_pft) = hio_seeds_in_local_si_pft(io_si,i_pft) + &
                         litt_c%seed_in_local(i_pft) * &
                         cpatch%area * AREA_INV * days_per_sec
+
+                   ! Seed decay flux out of the seed bank
+                   hio_seed_decay_si_pft(io_si,i_pft) = hio_seed_decay_si_pft(io_si,i_pft) + &
+                        litt_c%seed_decay(i_pft) * cpatch%area * AREA_INV * days_per_sec
 
                    ! Germination flux into seedling pool
                    hio_seed_germ_in_si_pft(io_si,i_pft) = hio_seed_germ_in_si_pft(io_si,i_pft) + &
@@ -7323,6 +7329,12 @@ contains
                use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',    &
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,      &
                index=ih_seed_germ_in_si_pft)
+
+          call this%set_history_var(vname='FATES_SEED_DECAY_PF', units='kg m-2 s-1',        &
+               long='seed decay flux out of the viable seed bank per PFT in kg carbon per m2 land area per second', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',      &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,        &
+               index = ih_seed_decay_si_pft)
 
           call this%set_history_var(vname='FATES_SEEDLING_MORT_PF', units='kg m-2 s-1',    &
                long='total seedling mortality flux from the seedling pool to litter per PFT in kg carbon per m2 land area per second', &
