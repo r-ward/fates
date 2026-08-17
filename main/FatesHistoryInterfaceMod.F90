@@ -17,6 +17,8 @@ module FatesHistoryInterfaceMod
   use FatesConstantsMod        , only : nocomp_bareground_land
   use FatesConstantsMod        , only : nocomp_bareground
   use FatesConstantsMod        , only : TRS_regeneration
+  use FatesConstantsMod        , only : TRS_no_seedling_dyn
+  use FatesConstantsMod        , only : min_max_dbh_for_trees
   use FatesGlobals             , only : fates_log
   use FatesGlobals             , only : endrun => fates_endrun
   use EDParamsMod              , only : nclmax, maxpft
@@ -665,6 +667,8 @@ module FatesHistoryInterfaceMod
   integer :: ih_seedling_pool_si_pft      ! carbon only
   integer :: ih_seed_germ_in_si_pft       ! carbon only
   integer :: ih_seedling_mort_si_pft      ! carbon only
+  integer :: ih_seed_in_viable_si_pft     ! carbon only
+  integer :: ih_seed_decay_viable_si_pft  ! carbon only
 
   ! Non-per-ageclass equivalents of per-ageclass variables
   integer :: ih_canopy_fracarea_si
@@ -3125,6 +3129,7 @@ contains
     integer  :: iscag_anthrodist  ! what is the equivalent age class for
                                   ! time-since-anthropogenic-disturbance of secondary forest
     real(r8) :: patch_fracarea  ! Fraction of area for this patch
+    real(r8) :: frac_seed       ! Seed fraction of reproductive carbon input (TRS repro_frac_seed)
     real(r8) :: frac_canopy_in_bin  ! fraction of a leaf's canopy that is within a given height bin
     real(r8) :: binbottom,bintop    ! edges of height bins
     integer  :: height_bin_max, height_bin_min   ! which height bin a given cohort's canopy is in
@@ -3348,6 +3353,8 @@ contains
              hio_seedling_mort_si_pft             => this%hvars(ih_seedling_mort_si_pft)%r82d, &
              hio_seeds_in_si_pft                  => this%hvars(ih_seeds_in_si_pft)%r82d, &
              hio_seeds_in_local_si_pft            => this%hvars(ih_seeds_in_local_si_pft)%r82d, &
+             hio_seed_in_viable_si_pft            => this%hvars(ih_seed_in_viable_si_pft)%r82d, &
+             hio_seed_decay_viable_si_pft         => this%hvars(ih_seed_decay_viable_si_pft)%r82d, &
              hio_disturbance_rate_si_lulu         => this%hvars(ih_disturbance_rate_si_lulu)%r82d, &
              hio_cstarvmortality_continuous_carbonflux_si_pft  => this%hvars(ih_cstarvmortality_continuous_carbonflux_si_pft)%r82d, &
              hio_transition_matrix_si_lulu      => this%hvars(ih_transition_matrix_si_lulu)%r82d, &
@@ -4243,6 +4250,25 @@ contains
                    ! Seedling mortality flux out of seedling pool
                    hio_seedling_mort_si_pft(io_si,i_pft) = hio_seedling_mort_si_pft(io_si,i_pft) + &
                         litt_c%seed_germ_decay(i_pft) * cpatch%area * AREA_INV * days_per_sec
+
+                   ! TRS seed-only fluxes. Only the repro_frac_seed fraction of
+                   ! local reproductive-carbon input is seed; the remainder was routed
+                   ! into seed_decay by SeedUpdate the same day (it appears in REPRO_IN
+                   ! and REPRO_DECAY but is never stored in the bank).  Outside TRS, or
+                   ! for non-tree PFTs, these accumulators are untouched and the
+                   ! variables read zero.
+                    if ( any(hlm_regeneration_model == [TRS_regeneration, TRS_no_seedling_dyn]) .and. &
+                        prt_params%allom_dbh_maxheight(i_pft) > min_max_dbh_for_trees ) then
+                      frac_seed = EDPftvarcon_inst%repro_frac_seed(i_pft)
+
+                      hio_seed_in_viable_si_pft(io_si,i_pft) = hio_seed_in_viable_si_pft(io_si,i_pft) + &
+                           (frac_seed * litt_c%seed_in_local(i_pft) + litt_c%seed_in_extern(i_pft)) * &
+                           cpatch%area * AREA_INV * days_per_sec
+
+                      hio_seed_decay_viable_si_pft(io_si,i_pft) = hio_seed_decay_viable_si_pft(io_si,i_pft) + &
+                           (litt_c%seed_decay(i_pft) - (1.0_r8 - frac_seed) * litt_c%seed_in_local(i_pft)) * &
+                           cpatch%area * AREA_INV * days_per_sec
+                   end if
 
                 end do
 
@@ -6704,32 +6730,32 @@ contains
             upfreq=group_dyna_simple, ivar=ivar, initialize=initialize_variables,                 &
             index = ih_litter_out_si)
 
-       call this%set_history_var(vname='FATES_SEED_BANK', units='kg m-2',         &
-            long='total seed mass of all PFTs in kg carbon per m2 land area',     &
+       call this%set_history_var(vname='FATES_SEED_SEEDLING_BANK', units='kg m-2',         &
+            long='total seed and seedling mass of all PFTs in kg carbon per m2 land area',     &
             use_default='active', avgflag='A', vtype=site_r8, hlms='CLM:ALM',     &
             upfreq=group_dyna_simple, ivar=ivar, initialize=initialize_variables,                 &
             index = ih_seed_bank_si)
 
        call this%set_history_var(vname='FATES_UNGERM_SEED_BANK', units='kg m-2',         &
-            long='ungerminated seed mass of all PFTs in kg carbon per m2 land area',     &
+            long='total ungerminated seed bank of all PFTs in kg carbon per m2 land area',     &
             use_default='active', avgflag='A', vtype=site_r8, hlms='CLM:ALM',     &
             upfreq=group_dyna_simple, ivar=ivar, initialize=initialize_variables,                 &
             index = ih_ungerm_seed_bank_si)
 
        call this%set_history_var(vname='FATES_SEEDLING_POOL', units='kg m-2',         &
-            long='total seedling (ie germinated seeds) mass of all PFTs in kg carbon per m2 land area',     &
+            long='total germinated (seedling) mass of all PFTs in kg carbon per m2 land area',     &
             use_default='active', avgflag='A', vtype=site_r8, hlms='CLM:ALM',     &
             upfreq=group_dyna_simple, ivar=ivar, initialize=initialize_variables,                 &
             index = ih_seedling_pool_si)
 
-       call this%set_history_var(vname='FATES_SEEDS_IN', units='kg m-2 s-1',      &
-            long='seed production rate in kg carbon per m2 second',               &
+       call this%set_history_var(vname='FATES_REPRO_IN', units='kg m-2 s-1',      &
+            long='total reproductive carbon input, local plus external (incl. non-seed material under TRS) in kg carbon per m2 per second',               &
             use_default='active', avgflag='A', vtype=site_r8, hlms='CLM:ALM',     &
             upfreq=group_dyna_simple, ivar=ivar, initialize=initialize_variables,                 &
             index = ih_seeds_in_si)
 
-       call this%set_history_var(vname='FATES_SEEDS_IN_LOCAL', units='kg m-2 s-1',      &
-            long='local seed production rate in kg carbon per m2 second',               &
+       call this%set_history_var(vname='FATES_REPRO_IN_LOCAL', units='kg m-2 s-1',      &
+            long='total local reproductive carbon input (incl. non-seed material under TRS) in kg carbon per m2 per second',               &
             use_default='active', avgflag='A', vtype=site_r8, hlms='CLM:ALM',     &
             upfreq=group_dyna_simple, ivar=ivar, initialize=initialize_variables,                 &
             index = ih_seeds_in_local_si)
@@ -7237,8 +7263,8 @@ contains
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
                index=ih_recruitment_cflux_si_pft)
           
-          call this%set_history_var(vname='FATES_SEEDLING_LAYER_SMP_PF', units='mm suction', &
-               long='soil matric potential in mm H2O suction (negative) at the PFT seedling rooting depth', &
+          call this%set_history_var(vname='FATES_TRS_SEEDLING_LAYER_SMP_PF', units='mm suction', &
+               long='soil matric potential in mm H2O suction (negative) at the PFT seedling rooting depth (TRS with seedling dyn. only)', &
                use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM', &
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables, &
                index=ih_seedling_layer_smp_si_pft)
@@ -7306,53 +7332,72 @@ contains
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
                index=ih_seeds_out_gc_si_pft)
 
-          call this%set_history_var(vname='FATES_SEED_BANK_PF', units='kg m-2',         &
-               long='total seed mass per PFT in kg carbon per m2 land area',     &
-               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',     &
-               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
-               index = ih_seed_bank_si_pft)
+          ! -------------------------------------------------------------------------
+          ! Seed-pipeline outputs.  Naming: REPRO_ = total reproductive carbon (incl.
+          ! non-seed under TRS); SEED = the model's seed accounting; TRS_ = zero
+          ! unless a TRS regeneration mode is active.  Pool names = life stage; flux
+          ! names = carbon process.
+          ! -------------------------------------------------------------------------
 
-          call this%set_history_var(vname='FATES_UNGERM_SEED_BANK_PF', units='kg m-2',         &
-               long='ungerminated seed mass per PFT in kg carbon per m2 land area',     &
-               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',     &
-               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
-               index = ih_ungerm_seed_bank_si_pft)
-
-          call this%set_history_var(vname='FATES_SEEDLING_POOL_PF', units='kg m-2',         &
-               long='total seedling (ie germinated seeds) mass per PFT in kg carbon per m2 land area',     &
-               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',     &
-               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
-               index = ih_seedling_pool_si_pft)
-
-          call this%set_history_var(vname='FATES_SEED_GERM_PF', units='kg m-2 s-1',       &
-               long='germination flux from the seed bank into the seedling pool per PFT in kg carbon per m2 land area per second', &
-               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',    &
-               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,      &
-               index=ih_seed_germ_in_si_pft)
-
-          call this%set_history_var(vname='FATES_SEED_DECAY_PF', units='kg m-2 s-1',        &
-               long='seed decay flux out of the viable seed bank per PFT in kg carbon per m2 land area per second', &
-               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',      &
-               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,        &
-               index = ih_seed_decay_si_pft)
-
-          call this%set_history_var(vname='FATES_SEEDLING_MORT_PF', units='kg m-2 s-1',    &
-               long='total seedling mortality flux from the seedling pool to litter per PFT in kg carbon per m2 land area per second', &
-               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',     &
-               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,       &
-               index = ih_seedling_mort_si_pft)
-
-          call this%set_history_var(vname='FATES_SEEDS_IN_PF', units='kg m-2 s-1',      &
-               long='seed production rate per PFT in kg carbon per m2 second',               &
-               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',     &
-               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
+          call this%set_history_var(vname='FATES_REPRO_IN_PF', units='kg m-2 s-1',      &
+               long='total reproductive carbon input per PFT, local plus external (incl. non-seed material under TRS) in kg carbon per m2 per second', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,    &
                index = ih_seeds_in_si_pft)
 
-          call this%set_history_var(vname='FATES_SEEDS_IN_LOCAL_PF', units='kg m-2 s-1',      &
-               long='local seed production rate per PFT in kg carbon per m2 second',               &
-               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',     &
-               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
+          call this%set_history_var(vname='FATES_REPRO_IN_LOCAL_PF', units='kg m-2 s-1', &
+               long='within-site total reproductive carbon input per PFT (incl. non-seed material under TRS) in kg carbon per m2 per second', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,    &
                index = ih_seeds_in_local_si_pft)
+
+          call this%set_history_var(vname='FATES_REPRO_DECAY_PF', units='kg m-2 s-1',   &
+               long='total reproductive carbon decay to litter per PFT (incl. non-seed material under TRS) in kg carbon per m2 land area per second', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,    &
+               index = ih_seed_decay_si_pft)
+          
+          call this%set_history_var(vname='FATES_TRS_SEED_IN_PF', units='kg m-2 s-1',   &
+               long='seed-only input flux to the seed bank per PFT, local plus external, in kg carbon per m2 land area per second (TRS mode only)', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,    &
+               index = ih_seed_in_viable_si_pft)
+          
+          call this%set_history_var(vname='FATES_TRS_SEED_DECAY_PF', units='kg m-2 s-1', &
+               long='seed-only seed bank decay per PFT in kg carbon per m2 land area per second (TRS mode only)', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,    &
+               index = ih_seed_decay_viable_si_pft)
+
+          call this%set_history_var(vname='FATES_UNGERM_SEED_BANK_PF', units='kg m-2',  &
+               long='ungerminated seed bank per PFT in kg carbon per m2 land area', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,    &
+               index = ih_ungerm_seed_bank_si_pft)
+          
+          call this%set_history_var(vname='FATES_SEED_GERM_IN_PF', units='kg m-2 s-1',  &
+               long='germination flux from ungerm. seed bank into the seedling pool per PFT in kg carbon per m2 land area per second', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,    &
+               index = ih_seed_germ_in_si_pft)
+          
+          call this%set_history_var(vname='FATES_SEEDLING_POOL_PF', units='kg m-2',     &
+               long='germinated (seedling) carbon pool per PFT in kg carbon per m2 land area', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,    &
+               index = ih_seedling_pool_si_pft)
+          
+          call this%set_history_var(vname='FATES_SEED_GERM_DECAY_PF', units='kg m-2 s-1', &
+               long='decay flux from the seedling pool to litter per PFT in kg carbon per m2 land area per second', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,    &
+               index = ih_seedling_mort_si_pft)
+
+          call this%set_history_var(vname='FATES_SEED_SEEDLING_BANK_PF', units='kg m-2', &
+               long='ungerminated seed plus germinated (seedling) carbon per PFT in kg carbon per m2 land area', &
+               use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM',  &
+               upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,    &
+               index = ih_seed_bank_si_pft)
 
           call this%set_history_var(vname='FATES_MORTALITY_PF', units='m-2 yr-1',    &
                long='PFT-level mortality rate in number of individuals per m2 land area per year', &
@@ -7439,8 +7484,8 @@ contains
                avgflag='A', vtype=site_age_r8, hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,  &
                initialize=initialize_variables, index=ih_fracarea_si_age)
 
-          call this%set_history_var(vname='FATES_SEEDLING_LAYER_PAR_AP', units='W m-2', &
-               long='24-hour mean PAR at the seedling layer by patch age, per m2 land area'//  &
+          call this%set_history_var(vname='FATES_TRS_SEEDLING_LAYER_PAR_AP', units='W m-2', &
+               long='24-hour mean PAR at the seedling layer by patch age, per m2 land area (TRS with seedling dyn. only)'//  &
                this%per_ageclass_norm_info('FATES_PATCHAREA/FATES_PATCHAREA_AP'),              &
                use_default='inactive', avgflag='A', vtype=site_age_r8, hlms='CLM:ALM',           &
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,           &
@@ -8005,7 +8050,7 @@ contains
                index=ih_recruitment_si_agepft)
 
           call this%set_history_var(vname='FATES_SEEDLING_POOL_APPF', units='kg m-2',      &
-               long='seedling (germinated seed) mass by patch age and PFT in kg carbon per m2 land area' &
+               long='germinated (seedling) carbon pool by patch age and PFT in kg carbon per m2 land area' &
                //this%per_ageclass_norm_info('FATES_PATCHAREA/FATES_PATCHAREA_AP'),        &
                use_default='inactive', avgflag='A', vtype=site_agepft_r8, hlms='CLM:ALM',  &
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,       &
