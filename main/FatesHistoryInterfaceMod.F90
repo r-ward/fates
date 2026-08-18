@@ -7129,8 +7129,8 @@ contains
             upfreq=group_dyna_simple, ivar=ivar, initialize=initialize_variables,                &
             index = ih_npp_leaf_si)
 
-       call this%set_history_var(vname='FATES_SEED_ALLOC', units='kg m-2 s-1',    &
-            long='allocation to seeds in kg carbon per m2 per second',           &
+       call this%set_history_var(vname='FATES_REPRO_ALLOC', units='kg m-2 s-1',    &
+            long='allocation to reproduction in kg carbon per m2 per second',           &
             use_default='active', avgflag='A', vtype=site_r8, hlms='CLM:ALM',    &
             upfreq=group_dyna_simple, ivar=ivar, initialize=initialize_variables,                &
             index = ih_npp_seed_si)
@@ -7331,13 +7331,6 @@ contains
                use_default='inactive', avgflag='A', vtype=site_pft_r8, hlms='CLM:ALM', &
                upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables,                 &
                index=ih_seeds_out_gc_si_pft)
-
-          ! -------------------------------------------------------------------------
-          ! Seed-pipeline outputs.  Naming: REPRO_ = total reproductive carbon (incl.
-          ! non-seed under TRS); SEED = the model's seed accounting; TRS_ = zero
-          ! unless a TRS regeneration mode is active.  Pool names = life stage; flux
-          ! names = carbon process.
-          ! -------------------------------------------------------------------------
 
           call this%set_history_var(vname='FATES_REPRO_IN_PF', units='kg m-2 s-1',      &
                long='total reproductive carbon input per PFT, local plus external (incl. non-seed material under TRS) in kg carbon per m2 per second', &
@@ -8042,7 +8035,7 @@ contains
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,                                 &
                initialize=initialize_variables, index = ih_biomass_si_agepft)
           
-          call this%set_history_var(vname='FATES_RECRUITMENT_APPF',units='m-2 yr-1', &
+          call this%set_history_var(vname='FATES_RECRUITMENT_APPF',units='m-2 yr-1',      &
                long='recruitment rate by patch age and PFT in individuals per m2 land area per year' &
                //this%per_ageclass_norm_info('FATES_PATCHAREA/FATES_PATCHAREA_AP'),   &
                use_default='active', avgflag='A', vtype=site_agepft_r8, hlms='CLM:ALM', &
@@ -8120,8 +8113,8 @@ contains
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,                                 &
                initialize=initialize_variables, index = ih_npp_leaf_si_scpf)
 
-          call this%set_history_var(vname='FATES_SEED_ALLOC_SZPF', units='kg m-2 s-1',  &
-               long='allocation to seeds by pft/size in kg carbon per m2 per second', &
+          call this%set_history_var(vname='FATES_REPRO_ALLOC_SZPF', units='kg m-2 s-1',  &
+               long='allocation to reproduction by pft/size in kg carbon per m2 per second', &
                use_default='inactive', avgflag='A', vtype=site_size_pft_r8,          &
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,                                  &
                initialize=initialize_variables, index = ih_npp_seed_si_scpf)
@@ -8797,9 +8790,9 @@ contains
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,                                 &
                initialize=initialize_variables, index = ih_bsw_md_canopy_si_scls)
 
-          call this%set_history_var(vname='FATES_SEED_PROD_CANOPY_SZ',               &
+          call this%set_history_var(vname='FATES_REPRO_PROD_CANOPY_SZ',               &
                units = 'kg m-2 s-1',                                                &
-               long='seed production of canopy plants by size class in kg carbon per m2 per second', &
+               long='reproductive carbon shed by canopy plants by size class in kg carbon per m2 per second', &
                use_default='inactive', avgflag='A', vtype=site_size_r8,             &
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,                                 &
                initialize=initialize_variables, index = ih_seed_prod_canopy_si_scls)
@@ -8832,7 +8825,7 @@ contains
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables, &
                index = ih_npp_dead_canopy_si_scls)
 
-          call this%set_history_var(vname='FATES_SEED_ALLOC_CANOPY_SZ',               &
+          call this%set_history_var(vname='FATES_REPRO_ALLOC_CANOPY_SZ',               &
                units = 'kg m-2 s-1',                                                 &
                long='allocation to reproductive C for canopy plants by size class in kg carbon per m2 per second', &
                use_default='inactive', avgflag='A', vtype=site_size_r8,              &
@@ -8885,9 +8878,9 @@ contains
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,                                 &
                initialize=initialize_variables, index = ih_bsw_md_understory_si_scls)
 
-          call this%set_history_var(vname='FATES_SEED_PROD_USTORY_SZ',           &
+          call this%set_history_var(vname='FATES_REPRO_PROD_USTORY_SZ',           &
                units = 'kg m-2 s-1',                                                &
-               long='seed production of understory plants by size class in kg carbon per m2 per second', &
+               long='reproductive carbon shed by understory plants by size class in kg carbon per m2 per second', &
                use_default='inactive', avgflag='A', vtype=site_size_r8,             &
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar,                                 &
                initialize=initialize_variables,                                     &
@@ -8921,7 +8914,7 @@ contains
                hlms='CLM:ALM', upfreq=group_dyna_complx, ivar=ivar, initialize=initialize_variables, &
                index = ih_npp_dead_understory_si_scls)
 
-          call this%set_history_var(vname='FATES_SEED_ALLOC_USTORY_SZ',           &
+          call this%set_history_var(vname='FATES_REPRO_ALLOC_USTORY_SZ',           &
                units = 'kg m-2 s-1',                                                 &
                long='allocation to reproductive C for understory plants by size class in kg carbon per m2 per second', &
                use_default='inactive', avgflag='A', vtype=site_size_r8,              &
